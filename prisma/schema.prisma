@@ -1,0 +1,248 @@
+// Berlin Indie Film Festival — Prisma schema
+// Stack: Next.js (App Router) + Prisma + MySQL (Hostinger)
+//
+// Notes:
+// - Money is stored as integer cents (priceCents / totalCents) to avoid float errors.
+// - Images are stored as file paths (imagePath); upload the file, save the path in the DB.
+// - Phase 2 (PayPal) tables (Order / OrderItem) exist but nothing is wired to PayPal yet.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Admin / auth ----------
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime @default(now())
+}
+
+// ---------- Site-wide settings (key/value: header image, logo, contact info, socials) ----------
+model SiteSetting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique // e.g. "header_image", "logo", "contact_email", "instagram"
+  value     String   @db.Text
+  updatedAt DateTime @updatedAt
+}
+
+// ---------- Festival editions (winners by month + year) ----------
+model Edition {
+  id           String        @id @default(cuid())
+  year         Int
+  month        Int // 1-12
+  title        String? // optional override, e.g. "June 2026 Edition"
+  slug         String        @unique // e.g. "2026-06"
+  published    Boolean       @default(false)
+  createdAt    DateTime      @default(now())
+  winners      Winner[]
+  seasonImages SeasonImage[]
+  eventPhotos  EventPhoto[]
+
+  @@unique([year, month])
+  @@index([year])
+}
+
+model Winner {
+  id                String    @id @default(cuid())
+  editionId         String
+  edition           Edition   @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  category          String
+  filmTitle         String?
+  recipient         String?
+  country           String?
+  imagePath         String?
+  order             Int       @default(0)
+  email             String?
+  certificateSent   Boolean   @default(false)
+  certificateSentAt DateTime?
+  certOverrides     String?   @db.Text
+
+  @@index([editionId])
+}
+
+model SeasonImage {
+  // film posters shown on edition winners page and optionally in the home carousel
+  id                 String  @id @default(cuid())
+  editionId          String
+  edition            Edition @relation(fields: [editionId], references: [id], onDelete: Cascade)
+  imagePath          String
+  cloudinaryId       String?
+  caption            String?
+  order              Int     @default(0)
+  featuredInCarousel Boolean @default(false)
+
+  @@index([editionId])
+}
+
+// ---------- Home: featured films carousel (scrolling preview images) ----------
+model FeaturedFilm {
+  id           String  @id @default(cuid())
+  title        String
+  previewImage String
+  linkUrl      String?
+  order        Int     @default(0)
+  active       Boolean @default(true)
+}
+
+// ---------- Home: editable text / announcement / image blocks ----------
+model HomeBlock {
+  id        String   @id @default(cuid())
+  title     String?
+  body      String?  @db.Text
+  imagePath String?
+  order     Int      @default(0)
+  active    Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+// ---------- Event photos (gallery page + "featured on home") ----------
+model EventPhoto {
+  id             String   @id @default(cuid())
+  imagePath      String
+  caption        String?
+  editionId      String?
+  edition        Edition? @relation(fields: [editionId], references: [id], onDelete: SetNull)
+  featuredOnHome Boolean  @default(false)
+  order          Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  @@index([editionId])
+}
+
+// ---------- Film reviews ----------
+model FilmReview {
+  id                String        @id @default(cuid())
+  slug              String        @unique
+  filmTitle         String
+  director          String?
+  coverImage        String?
+  coverCloudinaryId String?
+  videoUrl          String?
+  videoCloudinaryId String?
+  youtubeUrl        String?
+  body              String        @db.Text
+  published         Boolean       @default(false)
+  publishedAt       DateTime?
+  createdAt         DateTime      @default(now())
+  images            ReviewImage[]
+}
+
+model ReviewImage {
+  id           String     @id @default(cuid())
+  reviewId     String
+  review       FilmReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  imagePath    String
+  cloudinaryId String?
+  caption      String?
+  order        Int        @default(0)
+
+  @@index([reviewId])
+}
+
+// ---------- Dates: events & deadlines ----------
+enum DateType {
+  EVENT
+  DEADLINE
+  OTHER
+}
+
+model EventDate {
+  id          String    @id @default(cuid())
+  title       String
+  type        DateType  @default(EVENT)
+  startsAt    DateTime
+  endsAt      DateTime?
+  location    String?
+  description String?   @db.Text
+  createdAt   DateTime  @default(now())
+
+  @@index([startsAt])
+}
+
+// ---------- Shop: products (trophies & other elements) ----------
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  description String?     @db.Text
+  priceCents  Int
+  currency    String      @default("EUR")
+  imagePath   String?
+  stock       Int? // null = unlimited / made to order
+  active      Boolean     @default(true)
+  order       Int         @default(0)
+  createdAt   DateTime    @default(now())
+  orderItems  OrderItem[]
+}
+
+// ---------- Orders (Phase 2: PayPal) ----------
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id            String      @id @default(cuid())
+  customerName  String
+  customerEmail String
+  shipping      String?     @db.Text // address blob
+  totalCents    Int
+  currency      String      @default("EUR")
+  status        OrderStatus @default(PENDING)
+  paypalOrderId String?
+  createdAt     DateTime    @default(now())
+  items         OrderItem[]
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  nameSnapshot String // product name at time of order
+  priceCents   Int
+  quantity     Int      @default(1)
+
+  @@index([orderId])
+}
+
+// ---------- Filmmaker testimonials (reviews OF the festival) ----------
+model Testimonial {
+  id         String    @id @default(cuid())
+  name       String
+  avatarPath String?
+  body       String    @db.Text
+  rating     Int? // 1-5
+  reviewedAt DateTime?
+  featured   Boolean   @default(true)
+  order      Int       @default(0)
+  createdAt  DateTime  @default(now())
+}
+
+// ---------- Certificate email messages (history / reuse) ----------
+model CertMessage {
+  id        String   @id @default(cuid())
+  subject   String?
+  body      String   @db.Text
+  createdAt DateTime @default(now())
+}
+
+// ---------- Contact form submissions (visible in admin) ----------
+model ContactMessage {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String?
+  message   String   @db.Text
+  handled   Boolean  @default(false)
+  createdAt DateTime @default(now())
+}

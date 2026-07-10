@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+body {
+  background: #211c19;
+  color: #ece5da;
+}
+
+a { color: inherit; }
+
+.container-x { max-width: 1100px; margin-inline: auto; padding-inline: 1.25rem; }
+
+/* Subtle ceramic-tile texture, blended into the dark section colors —
+   used on major dark sections site-wide (not small cards) to add quiet
+   Sicilian depth without a separate overlay element per section. */
+.bg-textured {
+  background-color: #211c19; /* matches tailwind bg */
+  background-image: url('/uploads/decor/tile-texture.jpg');
+  background-size: 360px;
+  background-repeat: repeat;
+  background-blend-mode: soft-light;
+}
+.bg-textured-surface {
+  background-color: #2a2420; /* matches tailwind surface */
+  background-image: url('/uploads/decor/tile-texture.jpg');
+  background-size: 360px;
+  background-repeat: repeat;
+  background-blend-mode: soft-light;
+}
+
+/* Poster strip: CSS transform animation — works on all browsers/devices */
+@keyframes scroll-left {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.carousel-wrapper:hover .carousel-track {
+  animation-play-state: paused;
+}
