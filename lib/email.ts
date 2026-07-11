@@ -16,14 +16,12 @@ export async function sendNotification({
   subject: string;
   html: string;
 }) {
-  const user = process.env.SMTP_USER;
-  const pass = process.env.SMTP_PASS;
+  const user = process.env.GMAIL_USER;
+  const pass = process.env.GMAIL_APP_PASSWORD;
   if (!user || !pass) return; // skip silently if not configured
 
   const transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST || "smtp.hostinger.com",
-    port: Number(process.env.SMTP_PORT || 587),
-    secure: false,
+    host: "smtp.gmail.com", port: 465, secure: true,
     auth: { user, pass },
   });
 
