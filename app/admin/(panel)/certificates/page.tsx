@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic";
 
 function templateExists() {
   return fs.existsSync(
-    path.join(process.cwd(), "public/uploads/certificate-template-kiez-empty.jpg"),
+    path.join(process.cwd(), "public/uploads/certificate-template-sicilian-empty.jpg"),
   );
 }
 
@@ -85,9 +85,9 @@ export default async function CertificatesPage({
 
       {!hasTemplate && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4 mb-6 text-sm text-yellow-300">
-          <strong>Template missing.</strong> Save a blank certificate PNG to{" "}
+          <strong>Template missing.</strong> Save a blank certificate JPG to{" "}
           <code className="bg-white/10 px-1 rounded">
-            public/uploads/certificate-template-kiez-empty.jpg
+            public/uploads/certificate-template-sicilian-empty.jpg
           </code>{" "}
           then reload.
         </div>

@@ -3,19 +3,18 @@ import fontkit from "@pdf-lib/fontkit";
 import * as fs from "fs";
 import * as path from "path";
 
-// yFrac = fraction from bottom (pdf-lib origin is bottom-left)
-// xFrac = fraction from left (used for left-aligned date elements)
+// yFrac = fraction from bottom (pdf-lib origin is bottom-left) — measured off the
+// reference certificate (empty vs. filled example) provided for this template.
 const POS = {
-  category:  { yFrac: 0.925, sizeFrac: 0.0605, maxWidthFrac: 0.80 },
-  name:      { yFrac: 0.748, sizeFrac: 0.080,  maxWidthFrac: 0.52 },
-  filmTitle: { yFrac: 0.545, sizeFrac: 0.066,  maxWidthFrac: 0.52 },
-  month:     { yFrac: 0.138, xFrac: 0.172,     sizeFrac: 0.026 },
-  year:      { yFrac: 0.087, xFrac: 0.172,     sizeFrac: 0.065 },
+  category:  { yFrac: 0.938, sizeFrac: 0.0547, maxWidthFrac: 0.78 },
+  name:      { yFrac: 0.792, sizeFrac: 0.0567, maxWidthFrac: 0.55 },
+  filmTitle: { yFrac: 0.593, sizeFrac: 0.0471, maxWidthFrac: 0.52 },
+  date:      { yFrac: 0.120, sizeFrac: 0.0300, maxWidthFrac: 0.5 },
 };
 
-const WHITE    = rgb(1,     1,     1    );
-const WINE_RED = rgb(0.545, 0.125, 0.125); // #8b2020
-const BLACK    = rgb(0,     0,     0    );
+const RED   = rgb(0.8,   0,     0    ); // #cc0000
+const OLIVE = rgb(0.404, 0.396, 0.063); // #676519
+const BLACK = rgb(0,     0,     0    );
 
 export interface CertOverrides {
   name?:                   string;
@@ -105,8 +104,11 @@ function drawLines(
   font:   PDFFont,
   color:  ReturnType<typeof rgb>,
 ) {
+  // yFrac anchors the TOP line's baseline (not the block's vertical center) — some
+  // elements (e.g. category) sit close to a page edge, and a symmetric expand-around-
+  // center would push a wrapped multi-line block's first line off the top of the page.
   const lineGap = size * 1.25;
-  const yStart  = height * yFrac + (lineGap * (lines.length - 1)) / 2;
+  const yStart  = height * yFrac;
   for (let i = 0; i < lines.length; i++) {
     const lw = font.widthOfTextAtSize(lines[i], size);
     page.drawText(lines[i], {
@@ -198,85 +200,69 @@ export async function generateCertificate(
   data:       CertData,
   overrides?: CertOverrides,
 ): Promise<Uint8Array> {
-  const templatePath = path.join(process.cwd(), "public/uploads/certificate-template-kiez-empty.jpg");
+  const templatePath = path.join(process.cwd(), "public/uploads/certificate-template-sicilian-empty.jpg");
   if (!fs.existsSync(templatePath)) {
-    throw new Error("Certificate template not found at public/uploads/certificate-template-kiez-empty.jpg");
+    throw new Error("Certificate template not found at public/uploads/certificate-template-sicilian-empty.jpg");
   }
 
   const templateBytes     = fs.readFileSync(templatePath);
-const pdfDoc            = await PDFDocument.create();
+  const pdfDoc            = await PDFDocument.create();
   pdfDoc.registerFontkit(fontkit);
 
-  const pngImage          = await pdfDoc.embedJpg(templateBytes);
-  const { width, height } = pngImage.size();
+  const jpgImage          = await pdfDoc.embedJpg(templateBytes);
+  const { width, height } = jpgImage.size();
 
   const page = pdfDoc.addPage([width, height]);
-  page.drawImage(pngImage, { x: 0, y: 0, width, height });
+  page.drawImage(jpgImage, { x: 0, y: 0, width, height });
 
-  const fontBebas = await pdfDoc.embedFont(loadFont("BebasNeue-Regular.otf"));
-  const fontHeiti = await pdfDoc.embedFont(loadFont("HeitiTC-Medium-latin.ttf"));
+  const fontGaramondBold   = await pdfDoc.embedFont(loadFont("EBGaramond-Bold.ttf"));
+  const fontGaramondItalic = await pdfDoc.embedFont(loadFont("EBGaramond-Italic.ttf"));
+  const fontHeiti          = await pdfDoc.embedFont(loadFont("HeitiTC-Medium-latin.ttf"));
 
   const MONTHS = ["January","February","March","April","May","June",
                   "July","August","September","October","November","December"];
 
-  // Prize / category — Bebas Neue Regular, white, in the black bar at top
+  // Prize / category — EB Garamond Bold, red, top
   const catText = sanitizeText(overrides?.category ?? data.category.toUpperCase());
   if (overrides?.category) {
     drawOverride(page, catText, width, height,
       POS.category.yFrac, POS.category.sizeFrac, POS.category.maxWidthFrac,
-      fontBebas, WHITE, overrides.categorySizeMultiplier ?? 1);
+      fontGaramondBold, RED, overrides.categorySizeMultiplier ?? 1);
   } else {
     drawAdaptive(page, catText, width, height,
       POS.category.yFrac, POS.category.sizeFrac, POS.category.maxWidthFrac,
-      fontBebas, WHITE, overrides?.categorySizeMultiplier ?? 1);
+      fontGaramondBold, RED, overrides?.categorySizeMultiplier ?? 1);
   }
 
-  // Recipient name — Heiti TC Medium, wine red, above divider
+  // Recipient name — EB Garamond Italic, olive
   const nameText = sanitizeText(overrides?.name ?? data.recipientName);
   if (overrides?.name) {
     drawOverride(page, nameText, width, height,
       POS.name.yFrac, POS.name.sizeFrac, POS.name.maxWidthFrac,
-      fontHeiti, WINE_RED, overrides.nameSizeMultiplier ?? 1);
+      fontGaramondItalic, OLIVE, overrides.nameSizeMultiplier ?? 1);
   } else {
     drawAdaptive(page, nameText, width, height,
       POS.name.yFrac, POS.name.sizeFrac, POS.name.maxWidthFrac,
-      fontHeiti, WINE_RED, overrides?.nameSizeMultiplier ?? 1);
+      fontGaramondItalic, OLIVE, overrides?.nameSizeMultiplier ?? 1);
   }
 
-  // Film title — Heiti TC Medium, wine red, below divider
+  // Film title — Heiti TC Medium, black
   const filmText = sanitizeText(overrides?.film ?? data.filmTitle);
   if (overrides?.film) {
     drawOverride(page, filmText, width, height,
       POS.filmTitle.yFrac, POS.filmTitle.sizeFrac, POS.filmTitle.maxWidthFrac,
-      fontHeiti, WINE_RED, overrides.filmSizeMultiplier ?? 1);
+      fontHeiti, BLACK, overrides.filmSizeMultiplier ?? 1);
   } else {
     drawAdaptive(page, filmText, width, height,
       POS.filmTitle.yFrac, POS.filmTitle.sizeFrac, POS.filmTitle.maxWidthFrac,
-      fontHeiti, WINE_RED, overrides?.filmSizeMultiplier ?? 1);
+      fontHeiti, BLACK, overrides?.filmSizeMultiplier ?? 1);
   }
 
-  // Date — bottom left: month (small) above year (large), Bebas Neue, black
-  const monthText = MONTHS[data.month - 1].toUpperCase();
-  const monthSize = height * POS.month.sizeFrac;
-  const monthW    = fontBebas.widthOfTextAtSize(monthText, monthSize);
-  page.drawText(monthText, {
-    x:     width * POS.month.xFrac - monthW / 2,
-    y:     height * POS.month.yFrac,
-    size:  monthSize,
-    font:  fontBebas,
-    color: BLACK,
-  });
-
-  const yearText = String(data.year);
-  const yearSize = height * POS.year.sizeFrac;
-  const yearW    = fontBebas.widthOfTextAtSize(yearText, yearSize);
-  page.drawText(yearText, {
-    x:     width * POS.year.xFrac - yearW / 2,
-    y:     height * POS.year.yFrac,
-    size:  yearSize,
-    font:  fontBebas,
-    color: BLACK,
-  });
+  // Date — single "MONTH YEAR" line, EB Garamond Bold, red
+  const dateText = `${MONTHS[data.month - 1].toUpperCase()} ${data.year}`;
+  drawAdaptive(page, dateText, width, height,
+    POS.date.yFrac, POS.date.sizeFrac, POS.date.maxWidthFrac,
+    fontGaramondBold, RED);
 
   return await pdfDoc.save();
 }
