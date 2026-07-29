@@ -12,6 +12,7 @@ interface Winner {
   certificateSent:   boolean;
   certificateSentAt: Date | null;
   certOverrides:     string | null;
+  laurelOverrides:   string | null;
 }
 
 interface PastMessage {
@@ -25,11 +26,15 @@ export function CertificatesClient({
   editionId,
   winners,
   hasTemplate,
+  hasLaurel,
+  editionDateLabel,
   pastMessages,
 }: {
   editionId: string;
   winners: Winner[];
   hasTemplate: boolean;
+  hasLaurel: boolean;
+  editionDateLabel: string;
   pastMessages: PastMessage[];
 }) {
   const [msgSubject, setMsgSubject] = useState("");
@@ -59,6 +64,8 @@ export function CertificatesClient({
             key={w.id}
             winner={w}
             hasTemplate={hasTemplate}
+            hasLaurel={hasLaurel}
+            editionDateLabel={editionDateLabel}
             msgSubject={msgSubject}
             msgBody={msgBody}
             includeMessage={include}

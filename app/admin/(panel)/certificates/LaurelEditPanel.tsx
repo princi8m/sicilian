@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
-import { saveCertOverrides } from "./actions";
-import type { CertOverrides } from "@/lib/certificate";
+import { saveLaurelOverrides } from "./actions";
+import type { LaurelOverrides } from "@/lib/laurel";
 
 function SaveBtn() {
   const { pending } = useFormStatus();
@@ -32,31 +32,27 @@ function SizeControl({ name, label }: { name: string; label: string }) {
         className="w-28 accent-accent"
       />
       <span className="text-xs text-white/60 w-8">{val}%</span>
-      {/* Only this hidden field is actually submitted — the visible range input above is
-          deliberately unnamed so its raw 60-140 percentage never shadows the real
-          0.60-1.40 multiplier value (FormData.get() would otherwise return whichever of
-          two same-named fields comes first in DOM order, i.e. the wrong one). */}
+      {/* Only this hidden field is actually submitted — see EditPanel.tsx's SizeControl
+          for why the range input above is deliberately unnamed. */}
       <input type="hidden" name={name} value={(val / 100).toFixed(2)} />
     </div>
   );
 }
 
-export function EditPanel({
+export function LaurelEditPanel({
   winnerId,
-  defaultName,
-  defaultFilm,
   defaultCategory,
+  defaultDate,
   currentOverrides,
   onSaved,
 }: {
   winnerId:         string;
-  defaultName:      string;
-  defaultFilm:      string;
   defaultCategory:  string;
-  currentOverrides: CertOverrides | null;
+  defaultDate?:     string;
+  currentOverrides: LaurelOverrides | null;
   onSaved:          () => void;
 }) {
-  const [state, action] = useFormState(saveCertOverrides, null);
+  const [state, action] = useFormState(saveLaurelOverrides, null);
 
   if (state?.ok) { onSaved(); }
 
@@ -65,41 +61,31 @@ export function EditPanel({
       <input type="hidden" name="winnerId" value={winnerId} />
 
       <p className="text-xs text-white/40 leading-relaxed">
-        Customise how text appears on the certificate. Use <kbd className="bg-white/10 px-1 rounded">Enter</kbd> to force a line break.
+        Customise how text appears on the laurel. Use <kbd className="bg-white/10 px-1 rounded">Enter</kbd> to force a line break.
         Leave a field empty to use the automatic layout.
       </p>
 
       <div className="space-y-1">
-        <label className="text-xs text-white/60 font-medium">Recipient name</label>
-        <textarea
-          name="name"
-          rows={2}
-          defaultValue={currentOverrides?.name ?? defaultName}
-          className="w-full bg-panel border border-white/15 rounded px-3 py-2 text-sm text-white placeholder:text-white/25 resize-none focus:outline-none focus:border-accent font-mono"
-        />
-        <SizeControl name="nameSizeMultiplier" label="Name" />
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-xs text-white/60 font-medium">Film title</label>
-        <textarea
-          name="film"
-          rows={2}
-          defaultValue={currentOverrides?.film ?? defaultFilm}
-          className="w-full bg-panel border border-white/15 rounded px-3 py-2 text-sm text-white placeholder:text-white/25 resize-none focus:outline-none focus:border-accent font-mono"
-        />
-        <SizeControl name="filmSizeMultiplier" label="Film" />
-      </div>
-
-      <div className="space-y-1">
-        <label className="text-xs text-white/60 font-medium">Category</label>
+        <label className="text-xs text-white/60 font-medium">Award / category</label>
         <textarea
           name="category"
           rows={2}
           defaultValue={currentOverrides?.category ?? defaultCategory.toUpperCase()}
           className="w-full bg-panel border border-white/15 rounded px-3 py-2 text-sm text-white placeholder:text-white/25 resize-none focus:outline-none focus:border-accent font-mono"
         />
-        <SizeControl name="categorySizeMultiplier" label="Category" />
+        <SizeControl name="categorySizeMultiplier" label="Award" />
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs text-white/60 font-medium">Date</label>
+        <textarea
+          name="date"
+          rows={1}
+          placeholder={defaultDate}
+          defaultValue={currentOverrides?.date ?? ""}
+          className="w-full bg-panel border border-white/15 rounded px-3 py-2 text-sm text-white placeholder:text-white/25 resize-none focus:outline-none focus:border-accent font-mono"
+        />
+        <SizeControl name="dateSizeMultiplier" label="Date" />
       </div>
 
       <div className="flex items-center gap-3">
@@ -109,7 +95,7 @@ export function EditPanel({
           onClick={async () => {
             const fd = new FormData();
             fd.append("winnerId", winnerId);
-            await saveCertOverrides(null, fd);
+            await saveLaurelOverrides(null, fd);
             onSaved();
           }}
           className="px-3 py-1.5 text-xs rounded border border-white/20 text-white/60 hover:border-white/40"

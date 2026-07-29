@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import cloudinary from "@/lib/cloudinary";
 import type { UploadApiResponse } from "cloudinary";
+import { festival } from "@/lib/festival";
 
 // Minimal CSV parser: handles quoted fields and escaped quotes ("").
 function parseCSV(text: string): string[][] {
@@ -182,7 +183,7 @@ export async function addSeasonImage(formData: FormData) {
 
     const result = await new Promise<UploadApiResponse>((resolve, reject) => {
       cloudinary.uploader
-        .upload_stream({ folder: "kiez/posters" }, (error, result) => {
+        .upload_stream({ folder: festival.cloudinary.posters }, (error, result) => {
           if (error) reject(error);
           else resolve(result!);
         })

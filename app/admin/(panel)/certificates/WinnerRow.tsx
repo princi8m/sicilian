@@ -1,8 +1,10 @@
 "use client";
 import { useState } from "react";
 import { EditPanel } from "./EditPanel";
+import { LaurelEditPanel } from "./LaurelEditPanel";
 import { SendButton } from "./SendButton";
 import type { CertOverrides } from "@/lib/certificate";
+import type { LaurelOverrides } from "@/lib/laurel";
 
 interface Winner {
   id:                string;
@@ -13,32 +15,48 @@ interface Winner {
   certificateSent:   boolean;
   certificateSentAt: Date | null;
   certOverrides:     string | null;
+  laurelOverrides:   string | null;
 }
 
 export function WinnerRow({
   winner,
   hasTemplate,
+  hasLaurel,
+  editionDateLabel,
   msgSubject,
   msgBody,
   includeMessage,
 }: {
-  winner:          Winner;
-  hasTemplate:     boolean;
-  msgSubject?:     string;
-  msgBody?:        string;
-  includeMessage?: boolean;
+  winner:            Winner;
+  hasTemplate:       boolean;
+  hasLaurel:         boolean;
+  editionDateLabel:  string;
+  msgSubject?:       string;
+  msgBody?:          string;
+  includeMessage?:   boolean;
 }) {
   const [editing, setEditing] = useState(false);
+  const [editingLaurel, setEditingLaurel] = useState(false);
 
   const currentOverrides: CertOverrides | null = (() => {
     if (!winner.certOverrides) return null;
     try { return JSON.parse(winner.certOverrides); } catch { return null; }
   })();
 
+  const currentLaurelOverrides: LaurelOverrides | null = (() => {
+    if (!winner.laurelOverrides) return null;
+    try { return JSON.parse(winner.laurelOverrides); } catch { return null; }
+  })();
+
   const hasOverrides = currentOverrides !== null;
+  const hasLaurelOverrides = currentLaurelOverrides !== null;
 
   function openPreview() {
     window.open(`/api/certificate/preview/${winner.id}`, "_blank");
+  }
+
+  function openLaurelPreview() {
+    window.open(`/api/laurel/preview/${winner.id}`, "_blank");
   }
 
   return (
@@ -49,6 +67,9 @@ export function WinnerRow({
             {winner.recipient || "—"}
             {hasOverrides && (
               <span className="ml-2 text-xs text-accent/70 font-normal">custom layout</span>
+            )}
+            {hasLaurelOverrides && (
+              <span className="ml-2 text-xs text-accent/70 font-normal">custom laurel</span>
             )}
           </p>
           <p className="text-xs text-white/50 truncate">{winner.filmTitle || "—"}</p>
@@ -106,6 +127,33 @@ export function WinnerRow({
               )}
             </>
           )}
+
+          {hasLaurel && (
+            <>
+              <button
+                onClick={() => setEditingLaurel((v) => !v)}
+                className={`text-xs px-3 py-1.5 rounded border transition-colors ${
+                  editingLaurel
+                    ? "border-accent text-accent"
+                    : "border-white/20 text-white/60 hover:border-white/40"
+                }`}
+              >
+                {editingLaurel ? "Close" : "Edit laurel"}
+              </button>
+              <button
+                onClick={openLaurelPreview}
+                className="text-xs px-3 py-1.5 rounded border border-white/20 text-white/70 hover:border-accent hover:text-accent"
+              >
+                Preview laurel
+              </button>
+              <a
+                href={`/api/laurel/preview/${winner.id}?download=1`}
+                className="text-xs px-3 py-1.5 rounded border border-white/20 text-white/70 hover:border-accent hover:text-accent"
+              >
+                ↓ Laurel
+              </a>
+            </>
+          )}
         </div>
       </div>
 
@@ -119,6 +167,19 @@ export function WinnerRow({
           onSaved={() => {
             setEditing(false);
             openPreview();
+          }}
+        />
+      )}
+
+      {editingLaurel && (
+        <LaurelEditPanel
+          winnerId={winner.id}
+          defaultCategory={winner.category}
+          defaultDate={editionDateLabel}
+          currentOverrides={currentLaurelOverrides}
+          onSaved={() => {
+            setEditingLaurel(false);
+            openLaurelPreview();
           }}
         />
       )}

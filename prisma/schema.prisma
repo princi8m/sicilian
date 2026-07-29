@@ -63,6 +63,7 @@ model Winner {
   certificateSent   Boolean   @default(false)
   certificateSentAt DateTime?
   certOverrides     String?   @db.Text
+  laurelOverrides   String?   @db.Text
 
   @@index([editionId])
 }

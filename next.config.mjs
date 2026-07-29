@@ -8,6 +8,10 @@ const nextConfig = {
     serverActions: {
       bodySizeLimit: "500mb",
     },
+    // @napi-rs/canvas ships a native .node binary (for laurel image generation) — webpack
+    // can't parse that, so it must stay external and be require()'d directly at runtime
+    // instead of being bundled.
+    serverComponentsExternalPackages: ["@napi-rs/canvas"],
   },
 };
 export default nextConfig;

@@ -3,6 +3,7 @@ import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 import { festival } from "@/lib/festival";
 import { generateCertificate, parseCertOverrides, type CertOverrides } from "@/lib/certificate";
+import { generateLaurel, parseLaurelOverrides, hasLaurelTemplate, type LaurelOverrides } from "@/lib/laurel";
 import { revalidatePath } from "next/cache";
 
 function gmailTransport() {
@@ -34,6 +35,23 @@ Please find your official award certificate attached.</p>`;
 async function saveMessageIfNew(subject: string | undefined, body: string) {
   if (!body.trim()) return;
   await prisma.certMessage.create({ data: { subject: subject || null, body } });
+}
+
+async function buildLaurelAttachment(
+  category: string,
+  month: number,
+  year: number,
+  overridesJson: string | null | undefined,
+  safeName: string,
+) {
+  if (!hasLaurelTemplate()) return null;
+  try {
+    const png = await generateLaurel({ category, month, year }, parseLaurelOverrides(overridesJson));
+    return { filename: `laurel-${safeName}.png`, content: Buffer.from(png), contentType: "image/png" };
+  } catch (err) {
+    console.error("Laurel generation failed:", err);
+    return null;
+  }
 }
 
 export async function sendCertificate(
@@ -74,6 +92,14 @@ export async function sendCertificate(
   const filename  = `certificate-${safeName}.pdf`;
   const subject   = msgSubject || `Your ${festival.name} Certificate — ${winner.category}`;
 
+  const attachments: { filename: string; content: Buffer; contentType: string }[] = [
+    { filename, content: Buffer.from(pdfBytes), contentType: "application/pdf" },
+  ];
+  const laurelAttachment = await buildLaurelAttachment(
+    winner.category, winner.edition.month, winner.edition.year, winner.laurelOverrides, safeName,
+  );
+  if (laurelAttachment) attachments.push(laurelAttachment);
+
   try {
     const transport = gmailTransport();
     await transport.sendMail({
@@ -81,7 +107,7 @@ export async function sendCertificate(
       to:          winner.email,
       subject,
       html:        buildHtml(winner.recipient, winner.category, includeMsg ? msgBody : undefined),
-      attachments: [{ filename, content: Buffer.from(pdfBytes), contentType: "application/pdf" }],
+      attachments,
     });
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Email send failed" };
@@ -132,12 +158,19 @@ export async function sendAllCertificates(
       );
       const safeName = winner.recipient.replace(/\s+/g, "-").toLowerCase();
       const subject  = msgSubject || `Your ${festival.name} Certificate — ${winner.category}`;
+      const attachments: { filename: string; content: Buffer; contentType: string }[] = [
+        { filename: `certificate-${safeName}.pdf`, content: Buffer.from(pdfBytes), contentType: "application/pdf" },
+      ];
+      const laurelAttachment = await buildLaurelAttachment(
+        winner.category, winner.edition.month, winner.edition.year, winner.laurelOverrides, safeName,
+      );
+      if (laurelAttachment) attachments.push(laurelAttachment);
       await transport.sendMail({
         from:        `"${festival.name}" <${process.env.GMAIL_USER}>`,
         to:          winner.email,
         subject,
         html:        buildHtml(winner.recipient, winner.category, includeMsg ? msgBody : undefined),
-        attachments: [{ filename: `certificate-${safeName}.pdf`, content: Buffer.from(pdfBytes), contentType: "application/pdf" }],
+        attachments,
       });
       await prisma.winner.update({
         where: { id: winner.id },
@@ -179,6 +212,32 @@ export async function saveCertOverrides(
   await prisma.winner.update({
     where: { id: winnerId },
     data:  { certOverrides: isEmpty ? null : JSON.stringify(overrides) },
+  });
+
+  revalidatePath("/admin/certificates");
+  return { ok: true };
+}
+
+export async function saveLaurelOverrides(
+  _prevState: { ok: boolean; error?: string } | null,
+  formData: FormData,
+): Promise<{ ok: boolean; error?: string }> {
+  const winnerId = String(formData.get("winnerId"));
+  const overrides: LaurelOverrides = {};
+  const category = String(formData.get("category") || "").trim();
+  const date     = String(formData.get("date")     || "").trim();
+  const catMul   = parseFloat(String(formData.get("categorySizeMultiplier") || "1"));
+  const dateMul  = parseFloat(String(formData.get("dateSizeMultiplier")     || "1"));
+
+  if (category) overrides.category = category;
+  if (date)     overrides.date     = date;
+  if (!isNaN(catMul)  && catMul  !== 1) overrides.categorySizeMultiplier = catMul;
+  if (!isNaN(dateMul) && dateMul !== 1) overrides.dateSizeMultiplier     = dateMul;
+
+  const isEmpty = Object.keys(overrides).length === 0;
+  await prisma.winner.update({
+    where: { id: winnerId },
+    data:  { laurelOverrides: isEmpty ? null : JSON.stringify(overrides) },
   });
 
   revalidatePath("/admin/certificates");

@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { MONTHS } from "@/lib/session";
 import { EditionSelector } from "./EditionSelector";
 import { CertificatesClient } from "./CertificatesClient";
+import { hasLaurelTemplate } from "@/lib/laurel";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -29,6 +30,10 @@ export default async function CertificatesPage({
   }));
 
   const selectedId = searchParams.editionId || editions[0]?.id;
+  const selectedEdition = editions.find((e) => e.id === selectedId);
+  const editionDateLabel = selectedEdition
+    ? `${MONTHS[selectedEdition.month - 1].toUpperCase()} ${selectedEdition.year}`
+    : "";
 
   const [winners, pastMessages] = await Promise.all([
     selectedId
@@ -44,6 +49,7 @@ export default async function CertificatesPage({
             certificateSent:   true,
             certificateSentAt: true,
             certOverrides:     true,
+            laurelOverrides:   true,
           },
         })
       : Promise.resolve([]),
@@ -54,6 +60,7 @@ export default async function CertificatesPage({
   ]);
 
   const hasTemplate = templateExists();
+  const hasLaurel   = hasLaurelTemplate();
   const sentCount   = winners.filter((w) => w.certificateSent).length;
   const emailCount  = winners.filter((w) => w.email).length;
 
@@ -99,6 +106,8 @@ export default async function CertificatesPage({
             editionId={selectedId}
             winners={winners}
             hasTemplate={hasTemplate}
+            hasLaurel={hasLaurel}
+            editionDateLabel={editionDateLabel}
             pastMessages={pastMessages}
           />
         </>
