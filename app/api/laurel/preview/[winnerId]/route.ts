@@ -54,6 +54,9 @@ export async function GET(
         "Content-Disposition": download
           ? `attachment; filename="${filename}"`
           : `inline; filename="${filename}"`,
+        // Prevents the CDN from caching this per-winner URL and serving a stale image
+        // forever after edits (overrides, template changes) that should show up fresh.
+        "Cache-Control": "private, no-cache, no-store, must-revalidate",
       },
     });
   } catch (err) {

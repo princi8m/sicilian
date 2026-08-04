@@ -69,6 +69,7 @@ export async function GET(req: NextRequest) {
     headers: {
       "Content-Type":        "application/zip",
       "Content-Disposition": `attachment; filename="certificates-${label}.zip"`,
+      "Cache-Control": "private, no-cache, no-store, must-revalidate",
     },
   });
 }
