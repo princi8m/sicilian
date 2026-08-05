@@ -13,6 +13,14 @@ function gmailTransport() {
   return nodemailer.createTransport({
     host: "smtp.gmail.com", port: 465, secure: true,
     auth: { user, pass },
+    // Nodemailer's defaults (2min connection, 10min socket) mean one bad connection to
+    // Gmail can hang a request for a very long time. "Send All" awaits each winner's send
+    // sequentially, so a single hang there stalls the rest of the batch behind it — and with
+    // this app's DB connection pool limited, a stuck request can hold a connection open
+    // long enough to starve every other page on the site. Fail fast instead.
+    connectionTimeout: 10_000,
+    greetingTimeout:   10_000,
+    socketTimeout:     20_000,
   });
 }
 
