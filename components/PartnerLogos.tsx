@@ -1,5 +1,3 @@
-import Image from "next/image";
-
 const PARTNERS = [
   { src: "/uploads/partners/xinergie.jpg", alt: "Xinergie" },
   { src: "/uploads/partners/young-film-academy.jpg", alt: "Young Film Academy" },
@@ -23,7 +21,8 @@ export default function PartnerLogos() {
             {PARTNERS.map((p) => (
               <div key={p.src} className="flex items-center justify-center px-10 py-6 w-full sm:w-auto">
                 <div className="bg-paper rounded-md px-5 py-3">
-                  <Image
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={p.src}
                     alt={p.alt}
                     width={160}
