@@ -4,7 +4,6 @@ import FeaturedCarousel from "@/components/FeaturedCarousel";
 import TestimonialsSection from "@/components/TestimonialsSection";
 import FactGrid from "@/components/FactGrid";
 import { festival } from "@/lib/festival";
-import { withDbTimeout } from "@/lib/db-timeout";
 
 export const dynamic = "force-dynamic";
 
@@ -27,43 +26,23 @@ async function getSettings() {
 
 export default async function HomePage() {
   const [settings, featuredPosters, nextEvent, testimonials, featuredPhotos, latestEdition] = await Promise.all([
-    withDbTimeout(getSettings(), 10_000, "settings"),
-    withDbTimeout(
-      prisma.seasonImage.findMany({
-        where: { featuredInCarousel: true },
-        include: { edition: true },
-        orderBy: { order: "asc" },
-      }),
-      10_000,
-      "featuredPosters"
-    ),
-    withDbTimeout(
-      prisma.eventDate.findFirst({
-        where: { startsAt: { gte: new Date() } },
-        orderBy: { startsAt: "asc" },
-      }),
-      10_000,
-      "nextEvent"
-    ),
-    withDbTimeout(
-      prisma.testimonial.findMany({ where: { featured: true }, orderBy: [{ order: "asc" }], take: 4 }),
-      10_000,
-      "testimonials"
-    ),
-    withDbTimeout(
-      prisma.eventPhoto.findMany({ where: { featuredOnHome: true }, orderBy: { order: "asc" } }),
-      10_000,
-      "featuredPhotos"
-    ),
-    withDbTimeout(
-      prisma.edition.findFirst({
-        where: { published: true },
-        orderBy: [{ year: "desc" }, { month: "desc" }],
-        include: { winners: { orderBy: { order: "asc" }, take: 6 } },
-      }),
-      10_000,
-      "latestEdition"
-    ),
+    getSettings(),
+    prisma.seasonImage.findMany({
+      where: { featuredInCarousel: true },
+      include: { edition: true },
+      orderBy: { order: "asc" },
+    }),
+    prisma.eventDate.findFirst({
+      where: { startsAt: { gte: new Date() } },
+      orderBy: { startsAt: "asc" },
+    }),
+    prisma.testimonial.findMany({ where: { featured: true }, orderBy: [{ order: "asc" }], take: 4 }),
+    prisma.eventPhoto.findMany({ where: { featuredOnHome: true }, orderBy: { order: "asc" } }),
+    prisma.edition.findFirst({
+      where: { published: true },
+      orderBy: [{ year: "desc" }, { month: "desc" }],
+      include: { winners: { orderBy: { order: "asc" }, take: 6 } },
+    }),
   ]);
 
   const carouselItems = featuredPosters.map((img) => ({
