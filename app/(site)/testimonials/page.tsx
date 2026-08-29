@@ -4,8 +4,8 @@ export const revalidate = 3600;
 
 export default async function TestimonialsPage() {
   const [testimonials, settings] = await Promise.all([
-    prisma.testimonial.findMany({ orderBy: [{ order: "asc" }, { createdAt: "desc" }] }),
-    prisma.siteSetting.findMany({ where: { key: { in: ["reviews_count", "reviews_stars", "filmfreeway_url"] } } }),
+    prisma.testimonial.findMany({ orderBy: [{ order: "asc" }, { createdAt: "desc" }] }).catch(() => []),
+    prisma.siteSetting.findMany({ where: { key: { in: ["reviews_count", "reviews_stars", "filmfreeway_url"] } } }).catch(() => []),
   ]);
   const s = Object.fromEntries(settings.map(r => [r.key, r.value]));
   const stars = parseInt(s.reviews_stars || "0", 10);

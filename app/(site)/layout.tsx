@@ -6,8 +6,8 @@ import PartnerLogos from "@/components/PartnerLogos";
 
 export default async function SiteLayout({ children }: { children: React.ReactNode }) {
   const [navRows, logoRows] = await Promise.all([
-    prisma.siteSetting.findMany({ where: { key: { startsWith: "nav_" } } }),
-    prisma.siteSetting.findMany({ where: { key: { in: ["logo_path", "logo_height"] } } }),
+    prisma.siteSetting.findMany({ where: { key: { startsWith: "nav_" } } }).catch(() => []),
+    prisma.siteSetting.findMany({ where: { key: { in: ["logo_path", "logo_height"] } } }).catch(() => []),
   ]);
   const navEnabled = Object.fromEntries(navRows.map((r) => [r.key.replace("nav_", ""), r.value === "1"]));
   const logoSettings = Object.fromEntries(logoRows.map((r) => [r.key, r.value]));

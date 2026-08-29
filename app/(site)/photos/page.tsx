@@ -5,7 +5,7 @@ export const revalidate = 3600;
 export default async function PhotosPage() {
   const photos = await prisma.eventPhoto.findMany({
     orderBy: [{ order: "asc" }, { createdAt: "desc" }],
-  });
+  }).catch(() => []);
 
   return (
     <div>

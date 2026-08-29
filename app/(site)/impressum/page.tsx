@@ -4,7 +4,7 @@ import { festival } from "@/lib/festival";
 
 export const revalidate = 3600;
 export default async function ImpressumPage() {
-  const setting = await prisma.siteSetting.findUnique({ where: { key: "nav_impressum" } });
+  const setting = await prisma.siteSetting.findUnique({ where: { key: "nav_impressum" } }).catch(() => null);
   if (setting?.value === "0") notFound();
 
   const hasLegalInfo = Boolean(festival.legal.operator);

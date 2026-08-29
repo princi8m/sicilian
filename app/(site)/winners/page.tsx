@@ -9,7 +9,7 @@ export default async function WinnersIndex() {
   const editions = await prisma.edition.findMany({
     where: { published: true },
     orderBy: [{ year: "desc" }, { month: "desc" }],
-  });
+  }).catch(() => [] as Awaited<ReturnType<typeof prisma.edition.findMany>>);
 
   const byYear = new Map<number, typeof editions>();
   for (const e of editions) {

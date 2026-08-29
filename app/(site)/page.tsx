@@ -20,7 +20,7 @@ const CATEGORIES = [
 ];
 
 async function getSettings() {
-  const rows = await prisma.siteSetting.findMany();
+  const rows = await prisma.siteSetting.findMany().catch(() => []);
   return Object.fromEntries(rows.map((r) => [r.key, r.value])) as Record<string, string>;
 }
 
@@ -31,18 +31,18 @@ export default async function HomePage() {
       where: { featuredInCarousel: true },
       include: { edition: true },
       orderBy: { order: "asc" },
-    }),
+    }).catch(() => []),
     prisma.eventDate.findFirst({
       where: { startsAt: { gte: new Date() } },
       orderBy: { startsAt: "asc" },
-    }),
-    prisma.testimonial.findMany({ where: { featured: true }, orderBy: [{ order: "asc" }], take: 4 }),
-    prisma.eventPhoto.findMany({ where: { featuredOnHome: true }, orderBy: { order: "asc" } }),
+    }).catch(() => null),
+    prisma.testimonial.findMany({ where: { featured: true }, orderBy: [{ order: "asc" }], take: 4 }).catch(() => []),
+    prisma.eventPhoto.findMany({ where: { featuredOnHome: true }, orderBy: { order: "asc" } }).catch(() => []),
     prisma.edition.findFirst({
       where: { published: true },
       orderBy: [{ year: "desc" }, { month: "desc" }],
       include: { winners: { orderBy: { order: "asc" }, take: 6 } },
-    }),
+    }).catch(() => null),
   ]);
 
   const carouselItems = featuredPosters.map((img) => ({

@@ -21,7 +21,7 @@ export default async function EventsPage() {
   const events = await prisma.eventDate.findMany({
     where: { type: { not: "DEADLINE" } },
     orderBy: { startsAt: "desc" },
-  });
+  }).catch(() => []);
 
   const now = new Date();
   const upcoming = events.filter((e) => new Date(e.startsAt) >= now).reverse();

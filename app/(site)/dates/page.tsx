@@ -34,8 +34,8 @@ function DateBadge({ date, accentClass }: { date: Date; accentClass: string }) {
 
 export default async function DatesPage() {
   const [dates, settings] = await Promise.all([
-    prisma.eventDate.findMany({ orderBy: { startsAt: "asc" } }),
-    prisma.siteSetting.findMany({ where: { key: "dates_intro" } }),
+    prisma.eventDate.findMany({ orderBy: { startsAt: "asc" } }).catch(() => []),
+    prisma.siteSetting.findMany({ where: { key: "dates_intro" } }).catch(() => []),
   ]);
 
   const intro = settings[0]?.value ?? "The current entry for the Sicilian Film Awards is now open.";

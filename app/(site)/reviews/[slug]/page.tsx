@@ -9,7 +9,7 @@ export async function generateStaticParams() {
   const reviews = await prisma.filmReview.findMany({
     where: { published: true },
     select: { slug: true },
-  });
+  }).catch(() => []);
   return reviews.map((r) => ({ slug: r.slug }));
 }
 

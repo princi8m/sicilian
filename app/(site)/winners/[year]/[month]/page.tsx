@@ -9,7 +9,7 @@ export async function generateStaticParams() {
   const editions = await prisma.edition.findMany({
     where: { published: true },
     select: { year: true, month: true },
-  });
+  }).catch(() => []);
   return editions.map((e) => ({ year: String(e.year), month: String(e.month) }));
 }
 
