@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { festival } from "@/lib/festival";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 export default async function ImpressumPage() {
   const setting = await prisma.siteSetting.findUnique({ where: { key: "nav_impressum" } });
   if (setting?.value === "0") notFound();

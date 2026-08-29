@@ -3,7 +3,15 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { youtubeEmbedUrl } from "@/lib/youtube";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const reviews = await prisma.filmReview.findMany({
+    where: { published: true },
+    select: { slug: true },
+  });
+  return reviews.map((r) => ({ slug: r.slug }));
+}
 
 export default async function ReviewDetail({ params }: { params: { slug: string } }) {
   const r = await prisma.filmReview.findFirst({

@@ -1,20 +1,15 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { MONTHS } from "@/lib/session";
+import WinnersAccordion from "@/components/WinnersAccordion";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
-export default async function WinnersIndex({
-  searchParams,
-}: {
-  searchParams: { open?: string };
-}) {
+export default async function WinnersIndex() {
   const editions = await prisma.edition.findMany({
     where: { published: true },
     orderBy: [{ year: "desc" }, { month: "desc" }],
   });
-
-  const openYear = searchParams.open ? parseInt(searchParams.open, 10) : null;
 
   const byYear = new Map<number, typeof editions>();
   for (const e of editions) {
@@ -102,66 +97,7 @@ export default async function WinnersIndex({
           <p className="text-text-muted text-sm">No editions published yet.</p>
         )}
 
-        {sortedYears.map(([year, list], yi) => {
-          const isOpen = openYear === year || (openYear === null && yi === 0);
-          return (
-            <div key={year} className="border-b border-rule last:border-b-0">
-
-              {/* Year header */}
-              <div className="flex items-center gap-6 py-5">
-                <Link
-                  href={isOpen && openYear !== null ? "/winners" : `/winners?open=${year}`}
-                  className="group flex items-center gap-4 flex-1 min-w-0"
-                >
-                  <span className="font-display text-4xl text-accent group-hover:text-white transition-colors leading-none shrink-0">
-                    {year}
-                  </span>
-                  <span className="text-[0.55rem] font-black uppercase tracking-[0.25em] text-text-muted group-hover:text-accent transition-colors">
-                    {list.length} edition{list.length !== 1 ? "s" : ""}
-                  </span>
-                  <div className="flex-1 h-px bg-rule hidden sm:block" />
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src="/uploads/decor/motif-diamond-tile.png" alt="" aria-hidden="true" className="hidden sm:block w-6 h-6 object-contain opacity-60 shrink-0" />
-                  <span className="text-text-muted text-xs font-black shrink-0">
-                    {isOpen ? "↑" : "↓"}
-                  </span>
-                </Link>
-              </div>
-
-              {/* Editions grid */}
-              {isOpen && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 mb-6">
-                  {list.map((e, ei) => (
-                    <Link
-                      key={e.id}
-                      href={`/winners/${e.year}/${e.month}`}
-                      className={`relative bg-bg border-t border-rule p-5 group hover:bg-accent/5 transition-colors flex flex-col gap-3 ${
-                        ei < list.length - 1 ? "border-r" : ""
-                      }`}
-                    >
-                      <div>
-                        <p className="text-[0.5rem] font-black tracking-[0.3em] text-accent/60 uppercase mb-1">{e.year}</p>
-                        <p className="text-sm font-black uppercase tracking-tight leading-tight group-hover:text-accent transition-colors">
-                          {e.title || MONTHS[(e.month ?? 1) - 1]}
-                        </p>
-                      </div>
-                      <span className="text-[0.55rem] font-black tracking-[0.2em] text-text-muted uppercase group-hover:text-accent transition-colors mt-auto">
-                        View →
-                      </span>
-                      {ei < list.length - 1 && (
-                        <span
-                          aria-hidden="true"
-                          className="hidden sm:block absolute top-1/2 -right-[3px] -translate-y-1/2 w-[6px] h-[6px] rotate-45 bg-wine-red z-10"
-                        />
-                      )}
-                    </Link>
-                  ))}
-                </div>
-              )}
-
-            </div>
-          );
-        })}
+        <WinnersAccordion years={sortedYears} />
       </div>
       </section>
 

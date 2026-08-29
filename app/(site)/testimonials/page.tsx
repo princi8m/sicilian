@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function TestimonialsPage() {
   const [testimonials, settings] = await Promise.all([

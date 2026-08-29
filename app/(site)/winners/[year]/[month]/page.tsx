@@ -3,7 +3,15 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { MONTHS } from "@/lib/session";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const editions = await prisma.edition.findMany({
+    where: { published: true },
+    select: { year: true, month: true },
+  });
+  return editions.map((e) => ({ year: String(e.year), month: String(e.month) }));
+}
 
 const COUNTRY_NAMES: Record<string, string> = {
   AF: "Afghanistan", AL: "Albania", DZ: "Algeria", AR: "Argentina", AM: "Armenia",

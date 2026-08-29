@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 import SocialLinks from "@/components/SocialLinks";
 import { festival } from "@/lib/festival";
 

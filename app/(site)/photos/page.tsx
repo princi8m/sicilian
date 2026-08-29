@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 3600;
 
 export default async function PhotosPage() {
   const photos = await prisma.eventPhoto.findMany({
