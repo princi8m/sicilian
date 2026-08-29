@@ -5,13 +5,11 @@ import { MONTHS } from "@/lib/session";
 
 export const revalidate = 3600;
 
-export async function generateStaticParams() {
-  const editions = await prisma.edition.findMany({
-    where: { published: true },
-    select: { year: true, month: true },
-  }).catch(() => []);
-  return editions.map((e) => ({ year: String(e.year), month: String(e.month) }));
-}
+// No generateStaticParams: eagerly pre-rendering every edition at build time meant Next's
+// parallel build workers each opened their own DB connection for every single year/month
+// at once, which blew past the account's max_user_connections limit and failed a BIF deploy.
+// Skipping it means nothing is pre-rendered here — each page is generated (and cached) on
+// its first real visit instead, via ISR's default dynamicParams behavior.
 
 const COUNTRY_NAMES: Record<string, string> = {
   AF: "Afghanistan", AL: "Albania", DZ: "Algeria", AR: "Argentina", AM: "Armenia",

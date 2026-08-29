@@ -5,13 +5,11 @@ import { youtubeEmbedUrl } from "@/lib/youtube";
 
 export const revalidate = 3600;
 
-export async function generateStaticParams() {
-  const reviews = await prisma.filmReview.findMany({
-    where: { published: true },
-    select: { slug: true },
-  }).catch(() => []);
-  return reviews.map((r) => ({ slug: r.slug }));
-}
+// No generateStaticParams: eagerly pre-rendering every review at build time meant Next's
+// parallel build workers each opened their own DB connection for every single slug at
+// once, which blew past the account's max_user_connections limit and failed a BIF deploy.
+// Skipping it means nothing is pre-rendered here — each page is generated (and cached) on
+// its first real visit instead, via ISR's default dynamicParams behavior.
 
 export default async function ReviewDetail({ params }: { params: { slug: string } }) {
   const r = await prisma.filmReview.findFirst({
