@@ -52,7 +52,7 @@ async function buildLaurelAttachment(
   overridesJson: string | null | undefined,
   safeName: string,
 ) {
-  if (!hasLaurelTemplate()) return null;
+  if (!(await hasLaurelTemplate())) return null;
   try {
     const png = await generateLaurel({ category, month, year }, parseLaurelOverrides(overridesJson));
     return { filename: `laurel-${safeName}.png`, content: Buffer.from(png), contentType: "image/png" };

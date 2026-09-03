@@ -1,27 +1,42 @@
-import { PDFDocument, rgb, PDFFont, PDFPage } from "pdf-lib";
-import fontkit from "@pdf-lib/fontkit";
 import * as fs from "fs";
 import * as path from "path";
+import { prisma } from "@/lib/prisma";
+import { pdf } from "festival-engine-core";
+import { CERT_DEFAULT_LAYOUT, CERT_FONTS, CERT_STYLE, type CertFieldKey } from "@/lib/certificate-config";
+import { getCertFieldPositions } from "@/lib/field-positions";
 
-// yFrac = fraction from bottom (pdf-lib origin is bottom-left) — measured off the
-// reference certificate (empty vs. filled example) provided for this template.
-const POS = {
-  category:  { yFrac: 0.938, sizeFrac: 0.0547, maxWidthFrac: 0.78 },
-  name:      { yFrac: 0.792, sizeFrac: 0.0567, maxWidthFrac: 0.55 },
-  filmTitle: { yFrac: 0.593, sizeFrac: 0.0471, maxWidthFrac: 0.52 },
-  date:      { yFrac: 0.120, sizeFrac: 0.0300, maxWidthFrac: 0.5 },
-};
+const LEGACY_TEMPLATE_PATH = path.join(
+  process.cwd(),
+  "public/uploads/certificate-template-sicilian-empty.jpg",
+);
+const TEMPLATE_SETTING_KEY = "certificate_template";
 
-const RED   = rgb(0.8,   0,     0    ); // #cc0000
-const OLIVE = rgb(0.404, 0.396, 0.063); // #676519
-const BLACK = rgb(0,     0,     0    );
+interface TemplateRecord {
+  url:      string;
+  publicId: string;
+  format:   string; // "jpg" | "png"
+}
+
+interface TemplateAsset {
+  bytes:  Buffer;
+  format: "jpg" | "png";
+}
+
+function parseTemplateRecord(value: string): TemplateRecord | null {
+  try {
+    const parsed = JSON.parse(value);
+    return parsed?.url ? (parsed as TemplateRecord) : null;
+  } catch {
+    return null;
+  }
+}
 
 export interface CertOverrides {
-  name?:                   string;
-  film?:                   string;
-  category?:               string;
-  nameSizeMultiplier?:     number;
-  filmSizeMultiplier?:     number;
+  name?:                 string;
+  film?:                 string;
+  category?:             string;
+  nameSizeMultiplier?:   number;
+  filmSizeMultiplier?:   number;
   categorySizeMultiplier?: number;
 }
 
@@ -37,237 +52,117 @@ function loadFont(filename: string): Buffer {
   return fs.readFileSync(path.join(process.cwd(), "public/fonts", filename));
 }
 
-// The certificate fonts are Latin-subset and have no glyph for typographic
-// punctuation — pdf-lib silently draws an invisible .notdef box with a huge
-// advance width for those, which reads as a stray gap. Normalize to ASCII.
-function sanitizeText(text: string): string {
-  return text
-    .replace(/[‘’]/g, "'")
-    .replace(/[“”]/g, '"')
-    .replace(/[–—]/g, "-")
-    .replace(/ /g, " ");
-}
+// ── Template resolution ──────────────────────────────────────────────────────
+// Preferred source is a Cloudinary asset managed from /admin/certificates
+// (survives redeploys); a local file at LEGACY_TEMPLATE_PATH is kept as a
+// fallback for zero-downtime migration from the old hardcoded-path setup.
 
-function bestTwoLineSplit(
-  text: string,
-  font: PDFFont,
-  size: number,
-  maxW: number,
-): { line1: string; line2: string; balance: number; fits: boolean } {
-  const words = text.split(" ");
-  let bestSplit = 1, bestBalance = 0;
-  for (let i = 1; i < words.length; i++) {
-    const l1 = words.slice(0, i).join(" ");
-    const l2 = words.slice(i).join(" ");
-    const w1 = font.widthOfTextAtSize(l1, size);
-    const w2 = font.widthOfTextAtSize(l2, size);
-    const balance = Math.min(w1, w2) / Math.max(w1, w2);
-    if (balance > bestBalance) { bestBalance = balance; bestSplit = i; }
-  }
-  const line1 = words.slice(0, bestSplit).join(" ");
-  const line2 = words.slice(bestSplit).join(" ");
-  const fits =
-    font.widthOfTextAtSize(line1, size) <= maxW &&
-    font.widthOfTextAtSize(line2, size) <= maxW;
-  return { line1, line2, balance: bestBalance, fits };
-}
+async function getTemplateAsset(): Promise<TemplateAsset> {
+  const setting = await prisma.siteSetting.findUnique({
+    where: { key: TEMPLATE_SETTING_KEY },
+  });
+  const record = setting ? parseTemplateRecord(setting.value) : null;
 
-function wrapToFit(
-  text: string,
-  font: PDFFont,
-  size: number,
-  maxW: number,
-): string[] {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let current = "";
-  for (const word of words) {
-    const test = current ? `${current} ${word}` : word;
-    if (current && font.widthOfTextAtSize(test, size) > maxW) {
-      lines.push(current);
-      current = word;
-    } else {
-      current = test;
+  if (record) {
+    // Same class of bug as the Gmail SMTP hang found 2026-08-05: an external network call
+    // with no timeout can hold this request (and its DB connection) open indefinitely if
+    // Cloudinary is slow or unreachable.
+    const res = await fetch(record.url, { signal: AbortSignal.timeout(10_000) });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch certificate template from Cloudinary (${res.status})`);
     }
+    const bytes = Buffer.from(await res.arrayBuffer());
+    return { bytes, format: record.format === "png" ? "png" : "jpg" };
   }
-  if (current) lines.push(current);
-  return lines;
+
+  if (fs.existsSync(LEGACY_TEMPLATE_PATH)) {
+    return { bytes: fs.readFileSync(LEGACY_TEMPLATE_PATH), format: "jpg" };
+  }
+
+  throw new Error(
+    "Certificate template not found — upload one from Admin → Certificates.",
+  );
 }
 
-function drawLines(
-  page:   PDFPage,
-  lines:  string[],
-  width:  number,
-  height: number,
-  yFrac:  number,
-  size:   number,
-  font:   PDFFont,
-  color:  ReturnType<typeof rgb>,
-) {
-  // yFrac anchors the TOP line's baseline (not the block's vertical center) — some
-  // elements (e.g. category) sit close to a page edge, and a symmetric expand-around-
-  // center would push a wrapped multi-line block's first line off the top of the page.
-  const lineGap = size * 1.25;
-  const yStart  = height * yFrac;
-  for (let i = 0; i < lines.length; i++) {
-    const lw = font.widthOfTextAtSize(lines[i], size);
-    page.drawText(lines[i], {
-      x: width / 2 - lw / 2,
-      y: yStart - i * lineGap,
-      size,
-      font,
-      color,
-    });
-  }
+export async function hasCertificateTemplate(): Promise<boolean> {
+  const setting = await prisma.siteSetting.findUnique({
+    where: { key: TEMPLATE_SETTING_KEY },
+  });
+  if (setting && parseTemplateRecord(setting.value)) return true;
+  return fs.existsSync(LEGACY_TEMPLATE_PATH);
 }
 
-function drawAdaptive(
-  page:         PDFPage,
-  text:         string,
-  width:        number,
-  height:       number,
-  yFrac:        number,
-  sizeFrac:     number,
-  maxWidthFrac: number,
-  font:         PDFFont,
-  color:        ReturnType<typeof rgb>,
-  sizeMultiplier = 1,
-) {
-  const maxW     = width * maxWidthFrac;
-  const fullSize = height * sizeFrac * sizeMultiplier;
-  const minSize  = fullSize * 0.55;
-
-  let scaledSize = fullSize;
-  while (font.widthOfTextAtSize(text, scaledSize) > maxW && scaledSize > minSize) {
-    scaledSize -= 0.5;
-  }
-  const scaleFactor = scaledSize / fullSize;
-
-  const { line1, line2, balance, fits } = bestTwoLineSplit(text, font, fullSize, maxW);
-
-  let lines: string[];
-  let size: number;
-  if (scaleFactor >= 0.90) {
-    lines = [text]; size = scaledSize;
-  } else if (fits && balance >= 0.60) {
-    lines = [line1, line2]; size = fullSize;
-  } else {
-    // Too long even for a balanced 2-line split: wrap into as many lines
-    // as needed, shrinking further if any wrapped line still overflows.
-    size = scaledSize;
-    lines = wrapToFit(text, font, size, maxW);
-    const absMinSize = fullSize * 0.35;
-    while (
-      lines.some((l) => font.widthOfTextAtSize(l, size) > maxW) &&
-      size > absMinSize
-    ) {
-      size -= 0.5;
-      lines = wrapToFit(text, font, size, maxW);
-    }
-  }
-
-  drawLines(page, lines, width, height, yFrac, size, font, color);
+export async function getCertificateTemplatePreviewUrl(): Promise<string | null> {
+  const setting = await prisma.siteSetting.findUnique({
+    where: { key: TEMPLATE_SETTING_KEY },
+  });
+  const record = setting ? parseTemplateRecord(setting.value) : null;
+  return record?.url ?? null;
 }
 
-function drawOverride(
-  page:         PDFPage,
-  text:         string,
-  width:        number,
-  height:       number,
-  yFrac:        number,
-  sizeFrac:     number,
-  maxWidthFrac: number,
-  font:         PDFFont,
-  color:        ReturnType<typeof rgb>,
-  sizeMultiplier = 1,
-) {
-  const maxW    = width * maxWidthFrac;
-  let   size    = height * sizeFrac * sizeMultiplier;
-  const minSize = size * 0.45;
-  const lines   = text.split("\n").filter(Boolean);
+// ── Public API ────────────────────────────────────────────────────────────────
 
-  while (
-    lines.some((l) => font.widthOfTextAtSize(l, size) > maxW) &&
-    size > minSize
-  ) {
-    size -= 0.5;
-  }
-
-  drawLines(page, lines, width, height, yFrac, size, font, color);
-}
+const MONTHS = ["January","February","March","April","May","June",
+                "July","August","September","October","November","December"];
 
 export async function generateCertificate(
   data:       CertData,
   overrides?: CertOverrides,
 ): Promise<Uint8Array> {
-  const templatePath = path.join(process.cwd(), "public/uploads/certificate-template-sicilian-empty.jpg");
-  if (!fs.existsSync(templatePath)) {
-    throw new Error("Certificate template not found at public/uploads/certificate-template-sicilian-empty.jpg");
-  }
+  const template = await getTemplateAsset();
+  const handle = await pdf.createCertificatePdf(template);
 
-  const templateBytes     = fs.readFileSync(templatePath);
-  const pdfDoc            = await PDFDocument.create();
-  pdfDoc.registerFontkit(fontkit);
+  const layout = await getCertFieldPositions();
+  const fonts: Record<CertFieldKey, Awaited<ReturnType<typeof pdf.embedPdfFont>>> = {
+    category:  await pdf.embedPdfFont(handle, loadFont(CERT_FONTS.category)),
+    name:      await pdf.embedPdfFont(handle, loadFont(CERT_FONTS.name)),
+    filmTitle: await pdf.embedPdfFont(handle, loadFont(CERT_FONTS.filmTitle)),
+    date:      await pdf.embedPdfFont(handle, loadFont(CERT_FONTS.date)),
+  };
 
-  const jpgImage          = await pdfDoc.embedJpg(templateBytes);
-  const { width, height } = jpgImage.size();
+  // Date — no override support (never has had one); always adaptive.
+  pdf.drawAdaptiveField(
+    handle,
+    `${MONTHS[data.month - 1].toUpperCase()} ${data.year}`,
+    layout.date,
+    CERT_STYLE.date,
+    fonts.date,
+  );
 
-  const page = pdfDoc.addPage([width, height]);
-  page.drawImage(jpgImage, { x: 0, y: 0, width, height });
-
-  const fontGaramondBold   = await pdfDoc.embedFont(loadFont("EBGaramond-Bold.ttf"));
-  const fontGaramondItalic = await pdfDoc.embedFont(loadFont("EBGaramond-Italic.ttf"));
-  const fontHeiti          = await pdfDoc.embedFont(loadFont("HeitiTC-Medium-latin.ttf"));
-
-  const MONTHS = ["January","February","March","April","May","June",
-                  "July","August","September","October","November","December"];
-
-  // Prize / category — EB Garamond Bold, red, top
-  const catText = sanitizeText(overrides?.category ?? data.category.toUpperCase());
+  // Category
+  const catText = overrides?.category ?? data.category.toUpperCase();
   if (overrides?.category) {
-    drawOverride(page, catText, width, height,
-      POS.category.yFrac, POS.category.sizeFrac, POS.category.maxWidthFrac,
-      fontGaramondBold, RED, overrides.categorySizeMultiplier ?? 1);
+    pdf.drawOverrideField(handle, catText, layout.category, CERT_STYLE.category, fonts.category, overrides.categorySizeMultiplier ?? 1);
   } else {
-    drawAdaptive(page, catText, width, height,
-      POS.category.yFrac, POS.category.sizeFrac, POS.category.maxWidthFrac,
-      fontGaramondBold, RED, overrides?.categorySizeMultiplier ?? 1);
+    pdf.drawAdaptiveField(handle, catText, layout.category, CERT_STYLE.category, fonts.category, overrides?.categorySizeMultiplier ?? 1);
   }
 
-  // Recipient name — EB Garamond Italic, olive
-  const nameText = sanitizeText(overrides?.name ?? data.recipientName);
+  // Name — mixed case (NOT uppercased; unlike bif/bracciano, this site has never
+  // uppercased recipient names on the certificate).
+  const nameText = overrides?.name ?? data.recipientName;
   if (overrides?.name) {
-    drawOverride(page, nameText, width, height,
-      POS.name.yFrac, POS.name.sizeFrac, POS.name.maxWidthFrac,
-      fontGaramondItalic, OLIVE, overrides.nameSizeMultiplier ?? 1);
+    pdf.drawOverrideField(handle, nameText, layout.name, CERT_STYLE.name, fonts.name, overrides.nameSizeMultiplier ?? 1);
   } else {
-    drawAdaptive(page, nameText, width, height,
-      POS.name.yFrac, POS.name.sizeFrac, POS.name.maxWidthFrac,
-      fontGaramondItalic, OLIVE, overrides?.nameSizeMultiplier ?? 1);
+    pdf.drawAdaptiveField(handle, nameText, layout.name, CERT_STYLE.name, fonts.name, overrides?.nameSizeMultiplier ?? 1);
   }
 
-  // Film title — Heiti TC Medium, black
-  const filmText = sanitizeText(overrides?.film ?? data.filmTitle);
+  // Film title — mixed case (NOT uppercased)
+  const filmText = overrides?.film ?? data.filmTitle;
   if (overrides?.film) {
-    drawOverride(page, filmText, width, height,
-      POS.filmTitle.yFrac, POS.filmTitle.sizeFrac, POS.filmTitle.maxWidthFrac,
-      fontHeiti, BLACK, overrides.filmSizeMultiplier ?? 1);
+    pdf.drawOverrideField(handle, filmText, layout.filmTitle, CERT_STYLE.filmTitle, fonts.filmTitle, overrides.filmSizeMultiplier ?? 1);
   } else {
-    drawAdaptive(page, filmText, width, height,
-      POS.filmTitle.yFrac, POS.filmTitle.sizeFrac, POS.filmTitle.maxWidthFrac,
-      fontHeiti, BLACK, overrides?.filmSizeMultiplier ?? 1);
+    pdf.drawAdaptiveField(handle, filmText, layout.filmTitle, CERT_STYLE.filmTitle, fonts.filmTitle, overrides?.filmSizeMultiplier ?? 1);
   }
 
-  // Date — single "MONTH YEAR" line, EB Garamond Bold, red
-  const dateText = `${MONTHS[data.month - 1].toUpperCase()} ${data.year}`;
-  drawAdaptive(page, dateText, width, height,
-    POS.date.yFrac, POS.date.sizeFrac, POS.date.maxWidthFrac,
-    fontGaramondBold, RED);
-
-  return await pdfDoc.save();
+  return pdf.finalizePdf(handle);
 }
 
 export function parseCertOverrides(json: string | null | undefined): CertOverrides | undefined {
   if (!json) return undefined;
   try { return JSON.parse(json) as CertOverrides; } catch { return undefined; }
 }
+
+// Re-exported so app/admin/(panel)/certificates/field-position-actions.ts and admin UI
+// can validate against the same default shape without importing lib/certificate-config.ts
+// directly everywhere.
+export { CERT_DEFAULT_LAYOUT };

@@ -22,6 +22,7 @@
     "@prisma/client": "^5.22.0",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^2.10.0",
+    "festival-engine-core": "github:princi8m/festival-engine-core#v0.4.1",
     "jose": "^5.9.6",
     "jszip": "^3.10.1",
     "next": "^14.2.35",
