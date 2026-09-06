@@ -114,10 +114,13 @@ export async function movePhoto(formData: FormData) {
   const a = photos[idx];
   const b = photos[swapIdx];
 
-  await prisma.$transaction([
-    prisma.eventPhoto.update({ where: { id: a.id }, data: { order: b.order } }),
-    prisma.eventPhoto.update({ where: { id: b.id }, data: { order: a.order } }),
-  ]);
+  // Callback form (not array form) so this goes through the same $allModels.$allOperations
+  // 10s-timeout Prisma extension (lib/prisma.ts) as every other query in the app — the array
+  // form bypasses that extension entirely and has no timeout of its own.
+  await prisma.$transaction(async (tx) => {
+    await tx.eventPhoto.update({ where: { id: a.id }, data: { order: b.order } });
+    await tx.eventPhoto.update({ where: { id: b.id }, data: { order: a.order } });
+  });
 
   revalidatePath("/admin/photos");
   revalidatePath("/photos");
