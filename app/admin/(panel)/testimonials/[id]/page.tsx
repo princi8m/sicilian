@@ -54,7 +54,7 @@ export default async function EditTestimonial({ params }: { params: Promise<{ id
           <label className="flex items-center gap-2 text-sm">
             <input name="featured" type="checkbox" defaultChecked={t.featured} /> Featured on home page
           </label>
-          <button className="px-5 py-2 rounded bg-accent text-ink font-medium text-sm">Save</button>
+          <button className="px-5 py-2 rounded bg-accent text-white font-medium text-sm">Save</button>
         </form>
       </section>
 

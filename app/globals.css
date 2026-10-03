@@ -2,6 +2,56 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Color tokens as RGB channels — tailwind.config maps every color to these, so the
+   admin can swap the whole palette below without touching the public site. */
+:root {
+  --c-bg: 33 28 25;
+  --c-surface: 42 36 32;
+  --c-rule: 60 53 46;
+  --c-text-primary: 236 229 218;
+  --c-text-muted: 176 165 153;
+  --c-accent: 224 183 92;
+  --c-accent-light: 238 203 132;
+  --c-accent-dim: 166 122 40;
+  --c-wine-red: 213 85 95;
+  --c-panel: 42 36 32;
+  --c-ink: 26 22 19;
+  --c-star: 224 183 92;
+  --c-paper: 250 249 246;
+  --c-paper-raised: 242 240 235;
+  --c-paper-ink: 34 30 27;
+  --c-paper-muted: 107 98 90;
+  --c-accent-fg: var(--c-accent);
+}
+
+/* Shared admin palette — identical on every festival site, independent from the public
+   theme. Applied by app/admin/layout.tsx (login + panel). */
+.admin-theme {
+  --c-ink: 14 15 17;
+  --c-bg: 14 15 17;
+  --c-panel: 30 33 39;
+  --c-surface: 30 33 39;
+  --c-paper: 40 44 52;
+  --c-paper-raised: 40 44 52;
+  --c-rule: 62 67 77;
+  --c-text-primary: 241 242 244;
+  --c-paper-ink: 241 242 244;
+  --c-text-muted: 168 173 182;
+  --c-paper-muted: 168 173 182;
+  --c-accent: 47 111 222;
+  --c-wine-red: 47 111 222;
+  --c-accent-light: 122 167 255;
+  --c-accent-dim: 37 88 178;
+  --c-accent-fg: 122 167 255;
+  --c-star: 230 185 80;
+  color-scheme: dark;
+}
+/* Status colors in admin markup were picked for light backgrounds — lift them for the dark
+   admin so they stay readable. */
+.admin-theme .text-green-700, .admin-theme .text-green-600 { color: #4ade80; }
+.admin-theme .text-red-600, .admin-theme .text-red-700 { color: #f87171; }
+.admin-theme .text-yellow-700, .admin-theme .text-yellow-600 { color: #facc15; }
+
 :root { color-scheme: dark; }
 
 body {

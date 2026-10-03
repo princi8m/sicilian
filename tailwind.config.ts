@@ -8,26 +8,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        bg:             "#211c19",
-        surface:        "#2a2420",
-        rule:           "#3c352e",
-        "text-primary": "#ece5da",
-        "text-muted":   "#b0a599",
-        accent:         "#e0b75c",
-        "accent-light": "#eecb84",
-        "accent-dim":   "#a67a28",
-        "wine-red":     "#d5555f",
+        bg:             "rgb(var(--c-bg) / <alpha-value>)",
+        surface:        "rgb(var(--c-surface) / <alpha-value>)",
+        rule:           "rgb(var(--c-rule) / <alpha-value>)",
+        "text-primary": "rgb(var(--c-text-primary) / <alpha-value>)",
+        "text-muted":   "rgb(var(--c-text-muted) / <alpha-value>)",
+        accent:         "rgb(var(--c-accent) / <alpha-value>)",
+        "accent-light": "rgb(var(--c-accent-light) / <alpha-value>)",
+        "accent-dim":   "rgb(var(--c-accent-dim) / <alpha-value>)",
+        "wine-red":     "rgb(var(--c-wine-red) / <alpha-value>)",
         // backward-compat aliases
-        panel:          "#2a2420",
-        ink:            "#1a1613",
-        star:           "#e0b75c",
+        panel:          "rgb(var(--c-panel) / <alpha-value>)",
+        ink:            "rgb(var(--c-ink) / <alpha-value>)",
+        star:           "rgb(var(--c-star) / <alpha-value>)",
         // light "paper" band — used sparingly for CTA sections on an
         // otherwise dark site
-        paper:          "#faf9f6",
-        "paper-raised": "#f2f0eb",
-        "paper-ink":    "#221e1b",
-        "paper-muted":  "#6b625a",
+        paper:          "rgb(var(--c-paper) / <alpha-value>)",
+        "paper-raised": "rgb(var(--c-paper-raised) / <alpha-value>)",
+        "paper-ink":    "rgb(var(--c-paper-ink) / <alpha-value>)",
+        "paper-muted":  "rgb(var(--c-paper-muted) / <alpha-value>)",
         "paper-rule":   "rgba(34,30,27,0.14)",
+      },
+      textColor: {
+        accent: "rgb(var(--c-accent-fg) / <alpha-value>)",
       },
       animation: {
         marquee: "marquee 30s linear infinite",

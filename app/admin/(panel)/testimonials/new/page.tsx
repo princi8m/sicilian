@@ -38,7 +38,7 @@ export default function NewTestimonial() {
         <label className="flex items-center gap-2 text-sm">
           <input name="featured" type="checkbox" defaultChecked /> Featured on home page
         </label>
-        <button className="px-5 py-2 rounded bg-accent text-ink font-medium text-sm">Create</button>
+        <button className="px-5 py-2 rounded bg-accent text-white font-medium text-sm">Create</button>
       </form>
     </div>
   );

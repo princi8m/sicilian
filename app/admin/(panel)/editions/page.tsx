@@ -13,7 +13,7 @@ export default async function EditionsList() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Editions &amp; winners</h1>
-        <Link href="/admin/editions/new" className="px-4 py-2 rounded bg-accent text-ink font-medium">
+        <Link href="/admin/editions/new" className="px-4 py-2 rounded bg-accent text-white font-medium">
           + New edition
         </Link>
       </div>

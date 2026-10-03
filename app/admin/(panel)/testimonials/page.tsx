@@ -17,7 +17,7 @@ export default async function TestimonialsList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Testimonials</h1>
-        <Link href="/admin/testimonials/new" className="px-4 py-2 rounded bg-accent text-ink font-medium text-sm">
+        <Link href="/admin/testimonials/new" className="px-4 py-2 rounded bg-accent text-white font-medium text-sm">
           + New testimonial
         </Link>
       </div>
@@ -39,7 +39,7 @@ export default async function TestimonialsList() {
             <input name="filmfreeway_url" defaultValue={s.filmfreeway_url || ""} placeholder="https://filmfreeway.com/..." className={input + " mt-1"} />
           </label>
           <div className="md:col-span-3">
-            <button className="px-5 py-2 rounded bg-accent text-ink font-medium text-sm">Save settings</button>
+            <button className="px-5 py-2 rounded bg-accent text-white font-medium text-sm">Save settings</button>
           </div>
         </form>
       </section>

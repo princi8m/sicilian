@@ -48,7 +48,7 @@ export default async function NewEdition({
         <label className="flex items-center gap-2">
           <input name="published" type="checkbox" /> <span className="text-sm">Published</span>
         </label>
-        <button className="px-5 py-2 rounded bg-accent text-ink font-medium">Create</button>
+        <button className="px-5 py-2 rounded bg-accent text-white font-medium">Create</button>
       </form>
     </div>
   );
