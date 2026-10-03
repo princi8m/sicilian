@@ -5,11 +5,20 @@ import { MONTHS } from "@/lib/session";
 
 export const revalidate = 3600;
 
-// No generateStaticParams: eagerly pre-rendering every edition at build time meant Next's
-// parallel build workers each opened their own DB connection for every single year/month
-// at once, which blew past the account's max_user_connections limit and failed a BIF deploy.
-// Skipping it means nothing is pre-rendered here — each page is generated (and cached) on
-// its first real visit instead, via ISR's default dynamicParams behavior.
+// Pre-render every published edition at build time from a single batched query (not one
+// query per page) so every winners page ships as real static HTML on every deploy — no
+// page is ever generated cold from a live visitor/bot hit. Build-time parallelism is capped
+// via `experimental.cpus` in next.config.mjs so this can't reopen the DB-connection-exhaustion
+// issue that broke a BIF deploy previously. dynamicParams stays at its default (true) as a
+// fallback for any edition published between deploys — the admin actions already call
+// revalidatePath() on publish, so that fallback should rarely if ever be needed in practice.
+export async function generateStaticParams() {
+  const editions = await prisma.edition.findMany({
+    where: { published: true },
+    select: { year: true, month: true },
+  });
+  return editions.map((e) => ({ year: String(e.year), month: String(e.month) }));
+}
 
 const COUNTRY_NAMES: Record<string, string> = {
   AF: "Afghanistan", AL: "Albania", DZ: "Algeria", AR: "Argentina", AM: "Armenia",
@@ -49,10 +58,11 @@ function parseCountries(raw: string): { code: string; name: string }[] {
 export default async function WinnersDetail({
   params,
 }: {
-  params: { year: string; month: string };
+  params: Promise<{ year: string; month: string }>;
 }) {
-  const year = parseInt(params.year, 10);
-  const month = parseInt(params.month, 10);
+  const { year: yearParam, month: monthParam } = await params;
+  const year = parseInt(yearParam, 10);
+  const month = parseInt(monthParam, 10);
   if (Number.isNaN(year) || Number.isNaN(month)) notFound();
 
   const edition = await prisma.edition.findFirst({

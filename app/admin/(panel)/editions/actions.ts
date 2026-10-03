@@ -52,6 +52,8 @@ export async function createEdition(formData: FormData) {
     const edition = await prisma.edition.create({
       data: { year, month, title, published, slug: slugFor(year, month) },
     });
+    revalidatePath("/winners");
+    revalidatePath(`/winners/${year}/${month}`);
     redirect(`/admin/editions/${edition.id}`);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "";
@@ -74,12 +76,20 @@ export async function updateEdition(formData: FormData) {
   });
   revalidatePath(`/admin/editions/${id}`);
   revalidatePath("/admin/editions");
+  revalidatePath("/winners");
+  revalidatePath(`/winners/${year}/${month}`);
 }
 
 export async function deleteEdition(formData: FormData) {
   const id = String(formData.get("id"));
   await prisma.edition.delete({ where: { id } });
   redirect("/admin/editions");
+}
+
+async function revalidateEditionPublicPaths(editionId: string) {
+  const edition = await prisma.edition.findUnique({ where: { id: editionId }, select: { year: true, month: true } });
+  revalidatePath("/winners");
+  if (edition) revalidatePath(`/winners/${edition.year}/${edition.month}`);
 }
 
 export async function addWinner(formData: FormData) {
@@ -97,6 +107,7 @@ export async function addWinner(formData: FormData) {
     },
   });
   revalidatePath(`/admin/editions/${editionId}`);
+  await revalidateEditionPublicPaths(editionId);
 }
 
 export async function updateWinner(formData: FormData) {
@@ -114,7 +125,7 @@ export async function updateWinner(formData: FormData) {
     },
   });
   revalidatePath(`/admin/editions/${editionId}`);
-  revalidatePath("/winners");
+  await revalidateEditionPublicPaths(editionId);
 }
 
 export async function deleteWinner(formData: FormData) {
@@ -122,6 +133,7 @@ export async function deleteWinner(formData: FormData) {
   const editionId = String(formData.get("editionId"));
   await prisma.winner.delete({ where: { id } });
   revalidatePath(`/admin/editions/${editionId}`);
+  await revalidateEditionPublicPaths(editionId);
 }
 
 export async function importWinners(formData: FormData): Promise<void> {
@@ -160,7 +172,7 @@ export async function importWinners(formData: FormData): Promise<void> {
 
   await prisma.winner.createMany({ data });
   revalidatePath(`/admin/editions/${editionId}`);
-  revalidatePath("/winners");
+  await revalidateEditionPublicPaths(editionId);
 }
 
 export async function addSeasonImage(formData: FormData) {

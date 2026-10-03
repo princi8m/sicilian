@@ -9,7 +9,7 @@ const secret = new TextEncoder().encode(
 );
 
 async function isAdmin(): Promise<boolean> {
-  const token = cookies().get("kiez_session")?.value;
+  const token = (await cookies()).get("kiez_session")?.value;
   if (!token) return false;
   try {
     await jwtVerify(token, secret);
@@ -21,15 +21,16 @@ async function isAdmin(): Promise<boolean> {
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { winnerId: string } },
+  { params }: { params: Promise<{ winnerId: string }> },
 ) {
   const download = req.nextUrl.searchParams.get("download") === "1";
   if (!(await isAdmin())) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
 
+  const { winnerId } = await params;
   const winner = await prisma.winner.findUnique({
-    where: { id: params.winnerId },
+    where: { id: winnerId },
     include: { edition: { select: { month: true, year: true } } },
   });
 

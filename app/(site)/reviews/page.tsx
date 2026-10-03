@@ -9,9 +9,10 @@ const PER_PAGE = 20;
 export default async function ReviewsPage({
   searchParams,
 }: {
-  searchParams: { page?: string };
+  searchParams: Promise<{ page?: string }>;
 }) {
-  const page = Math.max(1, parseInt(searchParams.page ?? "1") || 1);
+  const { page: pageParam } = await searchParams;
+  const page = Math.max(1, parseInt(pageParam ?? "1") || 1);
 
   const [reviews, total] = await Promise.all([
     prisma.filmReview.findMany({

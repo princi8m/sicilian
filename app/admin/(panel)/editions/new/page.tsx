@@ -1,16 +1,17 @@
 import { createEdition } from "../actions";
 import { MONTHS } from "@/lib/session";
 
-export default function NewEdition({
+export default async function NewEdition({
   searchParams,
 }: {
-  searchParams: { error?: string; year?: string; month?: string };
+  searchParams: Promise<{ error?: string; year?: string; month?: string }>;
 }) {
+  const sp = await searchParams;
   const thisYear = new Date().getFullYear();
-  const isDuplicate = searchParams.error === "duplicate";
-  const isInvalid   = searchParams.error === "1";
-  const dupYear     = searchParams.year;
-  const dupMonth    = searchParams.month ? MONTHS[parseInt(searchParams.month) - 1] : "";
+  const isDuplicate = sp.error === "duplicate";
+  const isInvalid   = sp.error === "1";
+  const dupYear     = sp.year;
+  const dupMonth    = sp.month ? MONTHS[parseInt(sp.month) - 1] : "";
 
   return (
     <div className="max-w-lg">
@@ -35,7 +36,7 @@ export default function NewEdition({
           </label>
           <label className="block">
             <span className="text-sm text-white/70">Month</span>
-            <select name="month" defaultValue={searchParams.month ?? "1"} className="w-full bg-panel border border-white/10 rounded px-3 py-2 mt-1">
+            <select name="month" defaultValue={sp.month ?? "1"} className="w-full bg-panel border border-white/10 rounded px-3 py-2 mt-1">
               {MONTHS.map((m, i) => <option key={m} value={i + 1}>{m}</option>)}
             </select>
           </label>

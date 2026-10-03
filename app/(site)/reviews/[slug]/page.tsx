@@ -5,15 +5,24 @@ import { youtubeEmbedUrl } from "@/lib/youtube";
 
 export const revalidate = 3600;
 
-// No generateStaticParams: eagerly pre-rendering every review at build time meant Next's
-// parallel build workers each opened their own DB connection for every single slug at
-// once, which blew past the account's max_user_connections limit and failed a BIF deploy.
-// Skipping it means nothing is pre-rendered here — each page is generated (and cached) on
-// its first real visit instead, via ISR's default dynamicParams behavior.
+// Pre-render every published review at build time from a single batched query (not one
+// query per page) so every review page ships as real static HTML on every deploy — no
+// page is ever generated cold from a live visitor/bot hit. Build-time parallelism is capped
+// via `experimental.cpus` in next.config.mjs so this can't reopen the DB-connection-exhaustion
+// issue that broke a BIF deploy previously. dynamicParams stays at its default (true) as a
+// fallback for anything published between deploys.
+export async function generateStaticParams() {
+  const reviews = await prisma.filmReview.findMany({
+    where: { published: true },
+    select: { slug: true },
+  });
+  return reviews.map((r) => ({ slug: r.slug }));
+}
 
-export default async function ReviewDetail({ params }: { params: { slug: string } }) {
+export default async function ReviewDetail({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
   const r = await prisma.filmReview.findFirst({
-    where: { slug: params.slug, published: true },
+    where: { slug, published: true },
     include: { images: { orderBy: { order: "asc" } } },
   });
   if (!r) notFound();

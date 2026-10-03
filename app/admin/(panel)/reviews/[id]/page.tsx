@@ -7,9 +7,10 @@ export const dynamic = "force-dynamic";
 
 const inp = "w-full bg-panel border border-white/10 px-3 py-2 text-sm";
 
-export default async function EditReviewPage({ params }: { params: { id: string } }) {
+export default async function EditReviewPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const review = await prisma.filmReview.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: { images: { orderBy: { order: "asc" } } },
   });
   if (!review) notFound();

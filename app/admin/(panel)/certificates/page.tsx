@@ -16,8 +16,9 @@ export const dynamic = "force-dynamic";
 export default async function CertificatesPage({
   searchParams,
 }: {
-  searchParams: { editionId?: string };
+  searchParams: Promise<{ editionId?: string }>;
 }) {
+  const { editionId } = await searchParams;
   const editions = await prisma.edition.findMany({
     orderBy: [{ year: "desc" }, { month: "desc" }],
     select: { id: true, year: true, month: true },
@@ -28,7 +29,7 @@ export default async function CertificatesPage({
     label: `${MONTHS[e.month - 1]} ${e.year}`,
   }));
 
-  const selectedId = searchParams.editionId || editions[0]?.id;
+  const selectedId = editionId || editions[0]?.id;
   const selectedEdition = editions.find((e) => e.id === selectedId);
   const editionDateLabel = selectedEdition
     ? `${MONTHS[selectedEdition.month - 1].toUpperCase()} ${selectedEdition.year}`

@@ -11,7 +11,7 @@ const secret = new TextEncoder().encode(
 );
 
 async function isAdmin(): Promise<boolean> {
-  const token = cookies().get("kiez_session")?.value;
+  const token = (await cookies()).get("kiez_session")?.value;
   if (!token) return false;
   try { await jwtVerify(token, secret); return true; } catch { return false; }
 }

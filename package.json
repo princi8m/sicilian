@@ -25,11 +25,11 @@
     "festival-engine-core": "github:princi8m/festival-engine-core#v0.4.1",
     "jose": "^5.9.6",
     "jszip": "^3.10.1",
-    "next": "^14.2.35",
+    "next": "^15.5.24",
     "nodemailer": "^9.0.1",
     "pdf-lib": "^1.17.1",
-    "react": "18.3.1",
-    "react-dom": "18.3.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "resend": "^6.16.0"
   },
   "devDependencies": {

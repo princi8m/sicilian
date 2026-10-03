@@ -10,9 +10,10 @@ import {
 } from "../actions";
 export const dynamic = "force-dynamic";
 
-export default async function EditEdition({ params }: { params: { id: string } }) {
+export default async function EditEdition({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const edition = await prisma.edition.findUnique({
-    where: { id: params.id },
+    where: { id },
     include: {
       winners: { orderBy: { order: "asc" } },
       seasonImages: { orderBy: { order: "asc" } },
