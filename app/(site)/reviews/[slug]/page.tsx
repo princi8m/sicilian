@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { youtubeEmbedUrl } from "@/lib/youtube";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 // Pre-render every published review at build time from a single batched query (not one
 // query per page) so every review page ships as real static HTML on every deploy — no
@@ -21,6 +21,8 @@ export async function generateStaticParams() {
 
 export default async function ReviewDetail({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  // Reject malformed slugs (bot probes like /reviews/.env) before touching the DB.
+  if (!/^[A-Za-z0-9_-]{1,200}$/.test(slug)) notFound();
   const r = await prisma.filmReview.findFirst({
     where: { slug, published: true },
     include: { images: { orderBy: { order: "asc" } } },

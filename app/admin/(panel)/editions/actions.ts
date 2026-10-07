@@ -52,8 +52,7 @@ export async function createEdition(formData: FormData) {
     const edition = await prisma.edition.create({
       data: { year, month, title, published, slug: slugFor(year, month) },
     });
-    revalidatePath("/winners");
-    revalidatePath(`/winners/${year}/${month}`);
+    revalidatePath("/", "layout");
     redirect(`/admin/editions/${edition.id}`);
   } catch (e: unknown) {
     const msg = e instanceof Error ? e.message : "";
@@ -76,8 +75,7 @@ export async function updateEdition(formData: FormData) {
   });
   revalidatePath(`/admin/editions/${id}`);
   revalidatePath("/admin/editions");
-  revalidatePath("/winners");
-  revalidatePath(`/winners/${year}/${month}`);
+  revalidatePath("/", "layout");
 }
 
 export async function deleteEdition(formData: FormData) {
@@ -86,10 +84,10 @@ export async function deleteEdition(formData: FormData) {
   redirect("/admin/editions");
 }
 
-async function revalidateEditionPublicPaths(editionId: string) {
-  const edition = await prisma.edition.findUnique({ where: { id: editionId }, select: { year: true, month: true } });
-  revalidatePath("/winners");
-  if (edition) revalidatePath(`/winners/${edition.year}/${edition.month}`);
+// Public pages are static (long ISR window), so every admin write invalidates the whole
+// public site at once instead of enumerating the routes that might show this edition.
+async function revalidateEditionPublicPaths(_editionId: string) {
+  revalidatePath("/", "layout");
 }
 
 export async function addWinner(formData: FormData) {
@@ -214,8 +212,7 @@ export async function addSeasonImage(formData: FormData) {
   }
 
   revalidatePath(`/admin/editions/${editionId}`);
-  revalidatePath(`/winners`);
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function updateSeasonImage(formData: FormData) {
@@ -224,7 +221,7 @@ export async function updateSeasonImage(formData: FormData) {
   const caption = String(formData.get("caption") || "").trim() || null;
   await prisma.seasonImage.update({ where: { id }, data: { caption } });
   revalidatePath(`/admin/editions/${editionId}`);
-  revalidatePath("/winners");
+  revalidatePath("/", "layout");
 }
 
 export async function deleteSeasonImage(formData: FormData) {
@@ -238,14 +235,14 @@ export async function deleteSeasonImage(formData: FormData) {
 
   await prisma.seasonImage.delete({ where: { id } });
   revalidatePath(`/admin/editions/${editionId}`);
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function removeFromCarousel(formData: FormData) {
   const id = String(formData.get("id"));
   await prisma.seasonImage.update({ where: { id }, data: { featuredInCarousel: false } });
   revalidatePath("/admin/carousel");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function saveAllCarousel(formData: FormData) {
@@ -260,5 +257,5 @@ export async function saveAllCarousel(formData: FormData) {
     )
   );
   revalidatePath(`/admin/editions/${editionId}`);
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }

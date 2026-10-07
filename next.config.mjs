@@ -1,5 +1,16 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // /reviews pagination moved from ?page=N to /reviews/page/N so the page can be static.
+  async redirects() {
+    return [
+      {
+        source: "/reviews",
+        has: [{ type: "query", key: "page", value: "(?<page>[1-9]\\d{0,3})" }],
+        destination: "/reviews/page/:page",
+        permanent: true,
+      },
+    ];
+  },
   // Using plain <img> tags in the scaffold so any image path/URL works without
   // configuring remote domains. Switch to next/image later if you want optimization.
   // @napi-rs/canvas ships a native .node binary (for laurel image generation) — webpack

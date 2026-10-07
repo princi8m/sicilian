@@ -21,12 +21,6 @@ export async function saveSection(formData: FormData) {
       })
     )
   );
-  revalidatePath("/");
-  revalidatePath("/contact");
-  revalidatePath("/submissions");
-  revalidatePath("/winners");
-  revalidatePath("/photos");
-  revalidatePath("/reviews");
-  revalidatePath("/dates");
+  revalidatePath("/", "layout");
   revalidatePath("/admin/content");
 }

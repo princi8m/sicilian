@@ -1,4 +1,4 @@
-export const revalidate = 3600;
+export const revalidate = 86400;
 import SocialLinks from "@/components/SocialLinks";
 import { festival } from "@/lib/festival";
 

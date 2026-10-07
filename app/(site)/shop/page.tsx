@@ -1,4 +1,4 @@
-export const revalidate = 3600;
+export const revalidate = 86400;
 import Link from "next/link";
 
 const items = [

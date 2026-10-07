@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { festival } from "@/lib/festival";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 // TODO: this page previously carried a deep history of Kino Babylon (Berlin's
 // venue) with real archival photos — that content is Berlin-specific and has

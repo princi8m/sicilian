@@ -17,7 +17,7 @@ export async function createDate(formData: FormData) {
     data: { title, type, startsAt, endsAt, location, description },
   });
   revalidatePath("/admin/dates");
-  revalidatePath("/dates");
+  revalidatePath("/", "layout");
 }
 
 export async function updateDate(
@@ -40,7 +40,7 @@ export async function updateDate(
     data: { title, type, startsAt, endsAt, location, description },
   });
   revalidatePath("/admin/dates");
-  revalidatePath("/dates");
+  revalidatePath("/", "layout");
   return { ok: true };
 }
 
@@ -48,7 +48,7 @@ export async function deleteDate(formData: FormData) {
   const id = String(formData.get("id"));
   await prisma.eventDate.delete({ where: { id } });
   revalidatePath("/admin/dates");
-  revalidatePath("/dates");
+  revalidatePath("/", "layout");
 }
 
 export async function updateDatesIntro(formData: FormData) {
@@ -58,5 +58,5 @@ export async function updateDatesIntro(formData: FormData) {
     update: { value },
     create: { key: "dates_intro", value },
   });
-  revalidatePath("/dates");
+  revalidatePath("/", "layout");
 }

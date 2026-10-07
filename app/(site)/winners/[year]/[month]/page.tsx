@@ -3,7 +3,7 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { MONTHS } from "@/lib/session";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 // Pre-render every published edition at build time from a single batched query (not one
 // query per page) so every winners page ships as real static HTML on every deploy — no
@@ -61,9 +61,10 @@ export default async function WinnersDetail({
   params: Promise<{ year: string; month: string }>;
 }) {
   const { year: yearParam, month: monthParam } = await params;
+  // Reject malformed params (bot probes like /winners/wp-admin/x) before touching the DB.
+  if (!/^\d{4}$/.test(yearParam) || !/^(1[0-2]|[1-9])$/.test(monthParam)) notFound();
   const year = parseInt(yearParam, 10);
   const month = parseInt(monthParam, 10);
-  if (Number.isNaN(year) || Number.isNaN(month)) notFound();
 
   const edition = await prisma.edition.findFirst({
     where: { year, month, published: true },

@@ -17,7 +17,7 @@ export async function createTestimonial(formData: FormData) {
     },
   });
   revalidatePath("/admin/testimonials");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   redirect("/admin/testimonials");
 }
 
@@ -38,14 +38,14 @@ export async function updateTestimonial(formData: FormData) {
   });
   revalidatePath(`/admin/testimonials/${id}`);
   revalidatePath("/admin/testimonials");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function deleteTestimonial(formData: FormData) {
   const id = String(formData.get("id"));
   await prisma.testimonial.delete({ where: { id } });
   revalidatePath("/admin/testimonials");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   redirect("/admin/testimonials");
 }
 
@@ -61,5 +61,5 @@ export async function updateReviewSettings(formData: FormData) {
     )
   );
   revalidatePath("/admin/testimonials");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }

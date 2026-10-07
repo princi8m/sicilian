@@ -54,8 +54,7 @@ export async function uploadPhotoSingle(
 
 export async function finishPhotoUpload() {
   revalidatePath("/admin/photos");
-  revalidatePath("/photos");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   redirect("/admin/photos");
 }
 
@@ -73,8 +72,7 @@ export async function deletePhoto(formData: FormData) {
 
   await prisma.eventPhoto.delete({ where: { id } });
   revalidatePath("/admin/photos");
-  revalidatePath("/photos");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function toggleFeatured(formData: FormData) {
@@ -82,7 +80,7 @@ export async function toggleFeatured(formData: FormData) {
   const featured = formData.get("featuredOnHome") === "on";
   await prisma.eventPhoto.update({ where: { id }, data: { featuredOnHome: featured } });
   revalidatePath("/admin/photos");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function saveAllFeatured(formData: FormData) {
@@ -96,8 +94,7 @@ export async function saveAllFeatured(formData: FormData) {
     )
   );
   revalidatePath("/admin/photos");
-  revalidatePath("/photos");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }
 
 export async function movePhoto(formData: FormData) {
@@ -123,6 +120,5 @@ export async function movePhoto(formData: FormData) {
   });
 
   revalidatePath("/admin/photos");
-  revalidatePath("/photos");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }

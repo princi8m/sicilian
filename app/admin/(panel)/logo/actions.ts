@@ -29,5 +29,5 @@ export async function saveLogo(formData: FormData) {
   });
 
   revalidatePath("/admin/logo");
-  revalidatePath("/");
+  revalidatePath("/", "layout");
 }

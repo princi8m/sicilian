@@ -5,7 +5,7 @@ import TestimonialsSection from "@/components/TestimonialsSection";
 import FactGrid from "@/components/FactGrid";
 import { festival } from "@/lib/festival";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 // TODO: no confirmed FilmFreeway profile for Sicilian Film Awards yet —
 // linking to the internal submissions page until festival.filmfreeway is set.

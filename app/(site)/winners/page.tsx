@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { MONTHS } from "@/lib/session";
 import WinnersAccordion from "@/components/WinnersAccordion";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 export default async function WinnersIndex() {
   const editions = await prisma.edition.findMany({

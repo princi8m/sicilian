@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 
-export const revalidate = 3600;
+export const revalidate = 86400;
 
 const MONTHS_SHORT = ["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
 

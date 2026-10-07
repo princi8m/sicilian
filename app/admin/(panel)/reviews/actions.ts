@@ -72,7 +72,7 @@ export async function createReview(formData: FormData) {
   });
 
   revalidatePath("/admin/reviews");
-  revalidatePath("/reviews");
+  revalidatePath("/", "layout");
   redirect(`/admin/reviews/${review.id}`);
 }
 
@@ -136,7 +136,7 @@ export async function updateReview(formData: FormData) {
 
   revalidatePath(`/admin/reviews/${id}`);
   revalidatePath("/admin/reviews");
-  revalidatePath("/reviews");
+  revalidatePath("/", "layout");
   redirect("/admin/reviews");
 }
 
@@ -163,7 +163,7 @@ export async function deleteReview(formData: FormData) {
 
   await prisma.filmReview.delete({ where: { id } });
   revalidatePath("/admin/reviews");
-  revalidatePath("/reviews");
+  revalidatePath("/", "layout");
   redirect("/admin/reviews");
 }
 
@@ -194,7 +194,7 @@ export async function addReviewImage(formData: FormData) {
   }
 
   revalidatePath(`/admin/reviews/${reviewId}`);
-  revalidatePath("/reviews");
+  revalidatePath("/", "layout");
 }
 
 export async function deleteReviewImage(formData: FormData) {
@@ -206,5 +206,5 @@ export async function deleteReviewImage(formData: FormData) {
   }
   await prisma.reviewImage.delete({ where: { id } });
   revalidatePath(`/admin/reviews/${reviewId}`);
-  revalidatePath("/reviews");
+  revalidatePath("/", "layout");
 }

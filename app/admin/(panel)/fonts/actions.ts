@@ -9,7 +9,7 @@ export async function saveBodyFont(formData: FormData) {
     update: { value: family },
     create: { key: "font_family", value: family },
   });
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath("/admin/fonts");
 }
 
@@ -20,6 +20,6 @@ export async function saveDisplayFont(formData: FormData) {
     update: { value: family },
     create: { key: "font_display", value: family },
   });
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath("/admin/fonts");
 }
