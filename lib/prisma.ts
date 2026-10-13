@@ -10,6 +10,11 @@ import { PrismaClient } from "@prisma/client";
 const QUERY_TIMEOUT_MS = 10_000;
 
 function createPrismaClient() {
+  // Prisma's query engine runs a Tokio runtime with one worker thread per CPU core. Hostinger
+  // counts threads against the account's hard 200 "Max Processes" limit, and its shared
+  // servers have many cores, so every Next app was holding dozens of mostly idle threads.
+  // With connection_limit=3 one worker is plenty. Must be set before the engine starts.
+  process.env.TOKIO_WORKER_THREADS ??= "1";
   return new PrismaClient().$extends({
     query: {
       $allModels: {
