@@ -77,6 +77,47 @@ export default function ContactPage() {
         aria-hidden="true"
       />
 
+      {/* ── EMAIL NOTICE ───────────────────────────────────────── */}
+      {/* Temporary: the old Gmail inbox is no longer accessible and its mail is lost.
+          A one-line version of this notice is on the homepage. */}
+      <section id="email-notice" className="border-b border-rule bg-surface border-l-4 border-l-star scroll-mt-20">
+        <div className="container-x py-10">
+          <p className="text-[0.6rem] font-black tracking-[0.25em] text-star uppercase mb-6">Important notice · Avviso importante</p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
+            <div className="space-y-3 text-sm text-text-primary leading-relaxed">
+              <h2 className="text-lg font-black uppercase tracking-tight">Have you written to our Gmail address?</h2>
+              <p>
+                Due to a technical problem we no longer have access to our old Gmail inbox
+                (sicilianfilmawards&#64;gmail&#46;com). Messages sent there have been lost, and
+                we cannot read or answer them.
+              </p>
+              <p>
+                From now on, please write <strong>only</strong> to info&#64;sicilianfilmawards&#46;com.
+              </p>
+              <p className="text-text-muted">
+                If you wrote to us and have not received a reply, we sincerely apologise.
+                Please send your message again to the address below — we will answer as soon as possible.
+              </p>
+            </div>
+            <div className="space-y-3 text-sm text-text-primary leading-relaxed">
+              <h2 className="text-lg font-black uppercase tracking-tight">Ci avete scritto su Gmail?</h2>
+              <p>
+                A causa di un problema tecnico non abbiamo più accesso alla nostra vecchia casella Gmail
+                (sicilianfilmawards&#64;gmail&#46;com). I messaggi inviati lì sono andati persi e non
+                possiamo leggerli né rispondere.
+              </p>
+              <p>
+                D&apos;ora in poi scriveteci <strong>solo</strong> a info&#64;sicilianfilmawards&#46;com.
+              </p>
+              <p className="text-text-muted">
+                Se ci avete scritto e non avete ricevuto risposta, ci scusiamo sinceramente.
+                Vi chiediamo di inviarci di nuovo il vostro messaggio all&apos;indirizzo qui sotto — risponderemo il prima possibile.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ── EMAIL — large centrepiece ───────────────────────────── */}
       <section className="border-b border-rule bg-textured">
         <div className="container-x py-16 flex flex-col items-start gap-5">

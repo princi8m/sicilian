@@ -58,6 +58,27 @@ export default async function HomePage() {
   return (
     <div>
 
+      {/* ── EMAIL NOTICE ───────────────────────────────────────── */}
+      {/* Temporary: the old Gmail inbox is no longer accessible and its mail is lost.
+          Full explanation on /contact#email-notice. */}
+      <section className="border-b border-rule bg-surface border-l-4 border-l-star">
+        <div className="container-x py-4 flex flex-col md:flex-row md:items-center gap-3 md:gap-8">
+          <p className="text-[0.6rem] font-black tracking-[0.25em] text-star uppercase shrink-0">Important · Avviso</p>
+          <div className="text-sm text-text-primary leading-relaxed space-y-1">
+            <p>
+              Emails sent to our old Gmail address have been lost due to a technical problem. Please write only to{" "}
+              <a href={`mailto:${"info"}@${"sicilianfilmawards"}.com`} className="font-black text-star hover:underline">info&#64;sicilianfilmawards&#46;com</a>.
+            </p>
+            <p className="text-text-muted">
+              Le email inviate al nostro vecchio indirizzo Gmail sono andate perse per un problema tecnico. Scriveteci solo a info&#64;sicilianfilmawards&#46;com.
+            </p>
+          </div>
+          <Link href="/contact#email-notice" className="text-xs font-black uppercase tracking-widest text-star hover:underline shrink-0 md:ml-auto">
+            Details →
+          </Link>
+        </div>
+      </section>
+
       {/* ── HERO ───────────────────────────────────────────────── */}
       <section className="border-b border-rule relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-1 flex z-20">
