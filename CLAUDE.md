@@ -5,7 +5,7 @@
 - **Prisma 5.22 + MySQL** on Hostinger (`srv1959.hstgr.io:3306`)
 - **Tailwind CSS v3** with custom semantic tokens
 - **Cloudinary** for all image storage
-- **Nodemailer + Hostinger SMTP** (`smtp.hostinger.com:587`) for email
+- **Nodemailer + Titan SMTP** (`smtp.titan.email:465`, `SMTP_USER`=info@sicilianfilmawards.com, `SMTP_PASS`) for ALL email via `lib/mailer.ts` — never Gmail (old account compromised 2026-10)
 
 ## Critical DB rule
 Always `prisma db push` — NEVER `prisma migrate dev`. Hostinger blocks shadow DB creation.
