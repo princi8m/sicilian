@@ -30,10 +30,11 @@ export const festival = {
     instagramHandle: "",
   },
 
-  // TODO: confirm FilmFreeway URL for Sicilian Film Awards.
+  // Submissions on FilmFreeway under the historical slug (festival was formerly
+  // "Madonie Film Festival, Region of Sicily").
   filmfreeway: {
-    submitUrl: "",
-    profileUrl: "",
+    submitUrl: "https://filmfreeway.com/MadonieFilmFestivalRegionofSicily",
+    profileUrl: "https://filmfreeway.com/MadonieFilmFestivalRegionofSicily",
   },
 
   // TODO: unused in current codebase (Impressum is admin-editable), but if
